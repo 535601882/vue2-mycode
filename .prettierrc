@@ -1,0 +1,11 @@
+{
+  "printWidth": 150, // 每行代码的最大宽度
+  "tabWidth": 2, // 缩进的空格数
+   "useTabs": false, // 是否使用制表符进行缩进
+  "semi": true, // 是否在语句末尾加上分号
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "tslintIntegration": true,
+  "insertSpaceBeforeFunctionParenthesis": false,
+  "endOfLine": "lf"
+}
