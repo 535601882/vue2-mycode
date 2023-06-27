@@ -9,9 +9,16 @@ import zhLocale from "element-ui/lib/locale/lang/zh-CN";
 import enUS from "@/lang/en-US";
 import zhCN from "@/lang/zh-CN";
 import VueI18n from "vue-i18n";
+import api from "@/api";
+
+import("@/permission");
+import components from "@/components";
+for (let name in components) {
+  Vue.component(name, components[name]);
+}
 Vue.use(VueI18n);
 const i18n = new VueI18n({
-  locale: "en", // 默认语言
+  locale: "zh", // 默认语言
   fallbackLocale: "zh", // 默认语言环境。如果locale中无匹配项则采用该项值
   messages: {
     en: {
@@ -30,7 +37,7 @@ Vue.use(ElementUI, {
   i18n: (key, value) => i18n.t(key, value),
 });
 Vue.config.productionTip = false;
-
+Vue.prototype.$api = api;
 new Vue({
   router,
   i18n,

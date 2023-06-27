@@ -7,10 +7,10 @@
 </template>
 
 <script>
-import RecursiveMenuItem from './RecursiveMenuItem.vue';
+import RecursiveMenuItem from "./RecursiveMenuItem.vue";
 
 export default {
-  name: 'RecursiveMenu',
+  name: "RecursiveMenu",
 
   components: {
     RecursiveMenuItem,
@@ -24,7 +24,7 @@ export default {
     activeIndex: {
       type: String,
 
-      default: '',
+      default: "",
     },
   },
 
@@ -32,7 +32,7 @@ export default {
     handleSelect(key, keyPath) {
       console.log(key, keyPath);
 
-      this.$emit('onSelect', key);
+      this.$emit("onSelect", key);
     },
   },
 };

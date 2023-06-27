@@ -36,7 +36,6 @@ module.exports = {
       .set("@comp", resolve("src/components"))
       .set("@views", resolve("src/views"));
     // 生产环境，开启js\css压缩
-
     if (process.env.NODE_ENV === "production") {
       config.plugin("compressionPlugin").use(
         new CompressionPlugin({
@@ -45,8 +44,36 @@ module.exports = {
           deleteOriginalAssets: false, // 不删除源文件
         })
       );
+
+      config.optimization.splitChunks({
+        chunks: "all",
+        cacheGroups: {
+          libs: {
+            name: "chunk-libs",
+            test: /[\\/]node_modules[\\/]/,
+            priority: 10,
+            chunks: "initial", // only package third parties that are initially dependent
+          },
+          elementUI: {
+            name: "chunk-elementUI", // split elementUI into a single package
+            priority: 20, // the weight needs to be larger than libs and app or it will be packaged into libs or app
+            test: /[\\/]node_modules[\\/]_?element-ui(.*)/, // in order to adapt to cnpm
+          },
+          commons: {
+            name: "chunk-commons",
+            test: resolve("src/components"), // can customize your rules
+            minChunks: 3, //  minimum common number
+            priority: 5,
+            reuseExistingChunk: true,
+          },
+        },
+      });
+
+      config.optimization.runtimeChunk("single");
     }
   },
+  // 生产环境是否生成 sourceMap 文件
+  productionSourceMap: false,
   devServer: {
     port: 3110,
   },
