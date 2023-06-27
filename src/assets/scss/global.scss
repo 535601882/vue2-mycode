@@ -1,3 +1,9 @@
 html,body,#app,.el-container{
   height: 100%;
 }
+
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}

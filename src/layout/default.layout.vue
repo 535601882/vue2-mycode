@@ -63,6 +63,30 @@ export default {
             },
           ],
         },
+        {
+          title: "home",
+          path: "/home",
+          icon: "el-icon-location",
+          children: [],
+        },
+        {
+          title: "测试axios",
+          path: "/axios",
+          icon: "el-icon-location",
+          children: [],
+        },
+        {
+          title: "测试router",
+          path: "/router",
+          icon: "el-icon-location",
+          children: [],
+        },
+        {
+          title: "测试form",
+          path: "/form",
+          icon: "el-icon-location",
+          children: [],
+        },
       ],
       activeIndex: "/",
     };
