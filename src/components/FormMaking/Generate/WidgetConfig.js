@@ -675,7 +675,6 @@ export default {
               min: -1,
             });
             break;
-            return 1;
           case "type":
             if (["date"].includes(self.widgetFormSelect.type)) {
               return createElement("div", [

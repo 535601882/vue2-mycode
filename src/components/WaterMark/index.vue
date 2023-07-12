@@ -3,6 +3,7 @@
 </template>
 <script>
 export default {
+  name: "WaterMark",
   props: {
     //显示的水印文本
     inputText: {
