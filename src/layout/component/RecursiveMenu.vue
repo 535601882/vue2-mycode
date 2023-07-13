@@ -1,5 +1,5 @@
 <template>
-  <el-menu :default-active="activeIndex" class="recursive-menu" @select="handleSelect">
+  <el-menu :default-active="activeIndex" class="recursive-menu" @select="handleSelect" :mode="mode" v-bind="$attrs">
     <template v-for="item in menuItems">
       <recursive-menu-item :item="item" :key="item.path" :activeIndex="activeIndex"></recursive-menu-item>
     </template>
@@ -25,6 +25,10 @@ export default {
       type: String,
 
       default: "",
+    },
+    mode: {
+      type: String,
+      default: "vertical", //horizontal / vertical
     },
   },
 

@@ -706,10 +706,65 @@ export default {
             ]);
             break;
           case "justify":
+            // start/end/center/space-around/space-between
+            $slots = createSelect("options.justify", [
+              {
+                label: "start",
+                value: "start",
+              },
+              {
+                label: "end",
+                value: "end",
+              },
+              {
+                label: "center",
+                value: "center",
+              },
+              {
+                label: "space-around",
+                value: "space-around",
+              },
+              {
+                label: "space-between",
+                value: "space-between",
+              },
+            ]);
             break;
           case "align":
+            // top/middle/bottom
+            $slots = createSelect("options.align", [
+              {
+                label: "top",
+                value: "top",
+              },
+              {
+                label: "middle",
+                value: "middle",
+              },
+              {
+                label: "bottom",
+                value: "bottom",
+              },
+            ]);
             break;
           case "columns":
+            $slots = (self.widgetFormSelect.options.columns || []).map((item, index) => {
+              return createElement(
+                "div",
+                {
+                  props: {
+                    key: index,
+                  },
+                },
+                [
+                  createInputNumber(item.span, {
+                    min: 1,
+                    step: 1,
+                    "controls-position": "right",
+                  }),
+                ]
+              );
+            });
             break;
           default:
             // 不存在 终止

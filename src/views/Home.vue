@@ -4,6 +4,7 @@
     <el-button @click="handleToggle">切换语言 {{ $i18n.locale }}</el-button>
     <el-button @click="handleSetLang">设置语言</el-button>
     <el-button @click="handleMargeLang">合并语言</el-button>
+    <el-button @click="handleToggleLayout">切换layout</el-button>
   </div>
 </template>
 
@@ -32,6 +33,13 @@ export default {
       this.$i18n.mergeLocaleMessage("en", { ...{ demo: "demo" } });
       this.$i18n.mergeLocaleMessage("zh", { ...{ demo: "测试" } });
       console.log(this.$i18n.locale, this.$i18n.messages);
+    },
+    handleToggleLayout() {
+      if (this.$store.state.layout === "defaultLayout") {
+        this.$store.dispatch("setLayout", "verticalLayout");
+      } else {
+        this.$store.dispatch("setLayout", "defaultLayout");
+      }
     },
   },
   watch: {

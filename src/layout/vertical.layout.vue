@@ -1,8 +1,8 @@
 <template>
   <el-container>
-    <el-aside width="200px">
-      <recursive-menu :menu-items="menus" :active-index="activeIndex" @onSelect="handleSelectMenu"></recursive-menu>
-    </el-aside>
+    <el-header>
+      <recursive-menu :menu-items="menus" :active-index="activeIndex" @onSelect="handleSelectMenu" mode="horizontal"></recursive-menu>
+    </el-header>
     <el-main>
       <slot></slot>
     </el-main>
@@ -92,7 +92,7 @@ export default {
     };
   },
   created() {
-    console.log("default.layout");
+    console.log("vertical.layout");
   },
   methods: {
     handleSelectMenu(path) {
