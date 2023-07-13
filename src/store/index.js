@@ -5,9 +5,19 @@ import auth from "./module/auth";
 Vue.use(Vuex);
 
 export default new Vuex.Store({
-  state: {},
-  mutations: {},
-  actions: {},
+  state: {
+    layout: "defaultLayout",
+  },
+  mutations: {
+    SETLAYOUT(state, data) {
+      state.layout = data;
+    },
+  },
+  actions: {
+    setLayout({ commit }, data) {
+      commit("SETLAYOUT", data);
+    },
+  },
   modules: {
     auth,
   },

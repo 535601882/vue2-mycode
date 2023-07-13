@@ -159,7 +159,7 @@ export default {
       if (this.widgetForm.list[newIndex].type === "grid") {
         this.$set(this.widgetForm.list, newIndex, {
           ...this.widgetForm.list[newIndex],
-          columns: this.widgetForm.list[newIndex].columns.map((item) => ({ ...item })),
+          columns: this.widgetForm.list[newIndex].options.columns.map((item) => ({ ...item })),
         });
       }
 

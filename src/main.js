@@ -10,6 +10,7 @@ import enUS from "@/lang/en-US";
 import zhCN from "@/lang/zh-CN";
 import VueI18n from "vue-i18n";
 import api from "@/api";
+import "normalize.css";
 
 import("@/permission");
 import components from "@/components";
