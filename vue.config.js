@@ -1,6 +1,6 @@
 const path = require("path");
 const CompressionPlugin = require("compression-webpack-plugin");
-
+const setting = require("./src/config/setting.js");
 function resolve(dir) {
   return path.join(__dirname, dir);
 }
@@ -76,5 +76,6 @@ module.exports = {
   productionSourceMap: false,
   devServer: {
     port: 3110,
+    before: setting.USE_MOCK && require("./mock/server.js"),
   },
 };

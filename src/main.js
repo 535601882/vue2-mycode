@@ -11,6 +11,7 @@ import zhCN from "@/lang/zh-CN";
 import VueI18n from "vue-i18n";
 import api from "@/api";
 import "normalize.css";
+const setting = require("@/config/setting");
 
 import("@/permission");
 import components from "@/components";
@@ -39,6 +40,8 @@ Vue.use(ElementUI, {
 });
 Vue.config.productionTip = false;
 Vue.prototype.$api = api;
+Vue.prototype.$globalSetting = setting;
+
 new Vue({
   router,
   i18n,
