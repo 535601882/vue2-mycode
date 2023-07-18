@@ -150,3 +150,49 @@ subject是 commit 目的的简短描述，不超过50个字符。以动词开头
 
 Body 部分是对本次 commit 的详细描述，可以分成多行。
 ```
+
+# 使用 PlopJs 自动执行重复性工作
+
+```
+plopfile.js
+
+module.exports = function (plop) {
+    // create your generators here
+    plop.setGenerator('simple file', {
+        description: 'this is a basic plopfile',
+        prompts: [
+            {
+                type: 'input',
+                name: 'name',
+                message: 'Who do you want to greet?(e.g World)'
+            }
+        ], // array of inquirer prompts
+        actions: [
+            {
+                type: 'add',
+                path: 'newFolder/greetings{{name}}.js',
+                template: 'Hello {{name}}'
+            }
+        ]  // array of actions
+    });
+};
+```
+
+##  example.
+
+```
+const componentGenerator = require('./component/index.js');
+const containerGenerator = require('./container/index.js');
+const actionGenerator = require('./action/index.js');
+const reducerGenerator = require('./reducer/index.js');
+const apiGenerator = require('./api/index.js');
+
+module.exports = plop => {
+    plop.addHelper('upperCase', text => text.toUpperCase());
+    plop.setGenerator('component', componentGenerator);
+    plop.setGenerator('container', containerGenerator);
+    plop.setGenerator('action', actionGenerator);
+    plop.setGenerator('reducer', reducerGenerator);
+    plop.setGenerator('api', apiGenerator);
+};
+```

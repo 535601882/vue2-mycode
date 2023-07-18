@@ -5,6 +5,9 @@ import BasicDialog from "./BasicDialog/main";
 import AceEditor from "./AceEditor";
 import ImageUpload from "./ImageUpload";
 import QuillEditor from "./QuillEditor";
+import DemoComp from "./DemoComp";
+// COMPONENT IMPORTS
+
 export default {
   WaterMark,
   MakingForm,
@@ -16,4 +19,6 @@ export default {
   AceEditor,
   ImageUpload,
   QuillEditor,
+  DemoComp,
+  // COMPONENT EXPORTS
 };

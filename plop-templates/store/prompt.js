@@ -46,7 +46,7 @@ module.exports = {
     }
     const actions = [{
       type:'add',
-      path: `src/store/modules/${name}.js`,
+      path: `src/store/module/${name}.js`,
       templateFile: `plop-templates/store/index.hbs`,
       data: {
         options: options.join(joinFlag),
@@ -54,6 +54,11 @@ module.exports = {
         mutations: blocks.includes("mutations"),
         actions: blocks.includes("actions")
       }
+    },{
+      path: 'src/components/index.js',
+      pattern: /(\/\/ COMPONENT EXPORTS)/g,
+      template: `  ${name},\n$1`,
+      type: 'modify',
     }]
 
     return actions
