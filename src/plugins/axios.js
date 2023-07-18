@@ -1,7 +1,7 @@
 import axios from "axios";
 import store from "@/store";
 import router from "@/router";
-import setting from "@/config/setting";
+const setting = require("@/config/setting");
 // 标记是否正在刷新 Token
 let isRefreshing = false;
 // 存储待重发的请求
