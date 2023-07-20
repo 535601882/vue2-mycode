@@ -57,7 +57,7 @@ module.exports = {
     {
       path: 'src/components/index.js',
       pattern: /(\/\/ COMPONENT EXPORTS)/g,
-      template: `  ${name},\n$1`,
+      template: `\t${name},\n$1`,
       type: 'modify',
     }
     ]

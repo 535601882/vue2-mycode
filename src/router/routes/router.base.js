@@ -36,6 +36,12 @@ const routes = [
     path: "/404",
     component: () => import(/* webpackChunkName: "fail" */ "@/views/exception/404.vue"),
   },
+  {
+    path: "/grid-dash-board",
+    name: "GridDashBoard",
+    component: () => import(/* webpackChunkName: "GridDashBoard" */ "@/views/GridDashBoard/index.vue"),
+  },
+  // ROUTE IMPORT
   //   ],
   // },
   {

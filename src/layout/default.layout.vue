@@ -87,6 +87,12 @@ export default {
           icon: "el-icon-location",
           children: [],
         },
+        {
+          title: "grid-dash-board",
+          path: "/grid-dash-board",
+          icon: "el-icon-location",
+          children: [],
+        },
       ],
       activeIndex: "/",
     };

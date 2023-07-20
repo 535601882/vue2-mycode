@@ -6,6 +6,8 @@ import AceEditor from "./AceEditor";
 import ImageUpload from "./ImageUpload";
 import QuillEditor from "./QuillEditor";
 import DemoComp from "./DemoComp";
+import AppTable from "./AppTable";
+import FormConfigProvider from "./FormConfigProvider/index.js";
 // COMPONENT IMPORTS
 
 export default {
@@ -20,5 +22,7 @@ export default {
   ImageUpload,
   QuillEditor,
   DemoComp,
+  AppTable,
+  FormConfigProvider,
   // COMPONENT EXPORTS
 };

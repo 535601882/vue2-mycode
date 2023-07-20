@@ -31,17 +31,26 @@ module.exports = {
     }
   }],
   actions: data => {
-    const name = "{{name}}"
+    const aliasName = '{{properCase name}}'
     const actions = [{
       type: "add",
-      path: `src/views/${name}/index.vue`,
+      path: `src/views/${aliasName}/index.vue`,
       templateFile: "plop-templates/view/default-page/index.hbs",
       data: {
-        name: name,
+        name: aliasName,
         template: data.blocks.includes("template"),
         script: data.blocks.includes("script"),
         style: data.blocks.includes("style"),
       }
+    },{
+      path: 'src/router/routes/router.base.js',
+      pattern: /(\/\/ ROUTE IMPORT)/g,
+      template: `\t{
+    path: "/{{dashCase name}}",
+    name: "${aliasName}",
+    component: () => import(/* webpackChunkName: "${aliasName}" */ "@/views/${aliasName}/index.vue"),
+  },\n$1`,
+      type: 'modify',
     }]
     return actions
   }
