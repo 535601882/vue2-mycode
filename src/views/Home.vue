@@ -5,6 +5,8 @@
     <el-button @click="handleSetLang">设置语言</el-button>
     <el-button @click="handleMargeLang">合并语言</el-button>
     <el-button @click="handleToggleLayout">切换layout</el-button>
+    <hr />
+    <app-table :table="table"></app-table>
   </div>
 </template>
 
@@ -12,6 +14,13 @@
 export default {
   name: "Home",
   components: {},
+  data() {
+    return {
+      table: {
+        data: [],
+      },
+    };
+  },
   created() {
     console.log("created", this.$i18n, this.$i18n.messages);
   },
