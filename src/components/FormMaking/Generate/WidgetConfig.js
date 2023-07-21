@@ -154,6 +154,7 @@ export default {
     },
   },
   render(createElement) {
+    const { getValue, setValue } = this.$utils.ExpressionForObject(this.widgetFormSelect);
     var self = this;
     if (!self.isWidgetFormSelect) return createElement("div", "拖拽字段进行配置");
     // 函数用于创建el-form-item
@@ -172,12 +173,12 @@ export default {
     // 函数用于创建el-input
     function createInput(model, props = {}, condition = true) {
       const inputProps = {
-        value: utils.getValue(self.widgetFormSelect, model.split(".")),
+        value: getValue(model),
         clearable: true,
         ...props,
       };
       if (!condition) {
-        utils.setValue(self.widgetFormSelect, model.split("."), null);
+        setValue(model, null);
       }
 
       return createElement("el-input", {
@@ -190,7 +191,7 @@ export default {
         ],
         on: {
           input: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
           },
         },
       });
@@ -200,11 +201,11 @@ export default {
     function createSwitch(model, cb) {
       return createElement("el-switch", {
         props: {
-          value: utils.getValue(self.widgetFormSelect, model.split(".")),
+          value: getValue(model),
         },
         on: {
           change: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
             if (typeof cb === "function") {
               cb(value);
             }
@@ -232,11 +233,11 @@ export default {
         "el-radio-group",
         {
           props: {
-            value: utils.getValue(self.widgetFormSelect, model.split(".")),
+            value: getValue(model),
           },
           on: {
             input: function (value) {
-              utils.setValue(self.widgetFormSelect, model.split("."), value);
+              setValue(model, value);
             },
           },
         },
@@ -248,13 +249,13 @@ export default {
     function createSlider(model, props = {}) {
       return createElement("el-slider", {
         props: {
-          value: utils.getValue(self.widgetFormSelect, model.split(".")),
+          value: getValue(model),
           "input-size": self.attributeConfig.size,
           ...props,
         },
         on: {
           input: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
           },
         },
       });
@@ -264,13 +265,13 @@ export default {
     function createInputNumber(model, props = {}) {
       return createElement("el-input-number", {
         props: {
-          value: utils.getValue(self.widgetFormSelect, model.split(".")),
+          value: getValue(model),
           clearable: true,
           ...props,
         },
         on: {
           input: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
           },
         },
       });
@@ -281,11 +282,11 @@ export default {
     function createCheckbox(model) {
       return createElement("el-checkbox", {
         props: {
-          value: utils.getValue(self.widgetFormSelect, model.split(".")),
+          value: getValue(model),
         },
         on: {
           input: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
           },
         },
       });
@@ -306,11 +307,11 @@ export default {
         "el-select",
         {
           props: {
-            value: utils.getValue(self.widgetFormSelect, model.split(".")),
+            value: getValue(model),
           },
           on: {
             input: function (value) {
-              utils.setValue(self.widgetFormSelect, model.split("."), value);
+              setValue(model, value);
             },
             change: function (value) {
               let obj = options.find((item) => item.value === value);
@@ -328,12 +329,12 @@ export default {
     function createColorPicker(model, props = {}) {
       return createElement("el-color-picker", {
         props: {
-          value: utils.getValue(self.widgetFormSelect, model.split(".")),
+          value: getValue(model),
           ...props,
         },
         on: {
           input: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
           },
         },
       });
@@ -343,12 +344,12 @@ export default {
     function createRate(model, props = {}) {
       return createElement("el-rate", {
         props: {
-          value: utils.getValue(self.widgetFormSelect, model.split(".")),
+          value: getValue(model),
           ...props,
         },
         on: {
           input: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
           },
         },
       });
@@ -359,13 +360,13 @@ export default {
     function createTimePicker(model) {
       return createElement("el-time-picker", {
         props: {
-          value: utils.getValue(self.widgetFormSelect, model.split(".")),
+          value: getValue(model),
           arrowControl: self.widgetFormSelect.options.arrowControl,
           "value-format": self.widgetFormSelect.options.format,
         },
         on: {
           input: function (value) {
-            utils.setValue(self.widgetFormSelect, model.split("."), value);
+            setValue(model, value);
           },
         },
       });
@@ -390,11 +391,11 @@ export default {
         "el-checkbox-group",
         {
           props: {
-            value: utils.getValue(self.widgetFormSelect, model.split(".")),
+            value: getValue(model),
           },
           on: {
             input: function (value) {
-              utils.setValue(self.widgetFormSelect, model.split("."), value);
+              setValue(model, value);
             },
           },
         },
@@ -426,22 +427,28 @@ export default {
                   width: "90px",
                 },
                 props: {
-                  value: item.value,
+                  value: item.label,
+                },
+                attrs: {
+                  placeholder: "label",
                 },
                 on: {
                   input: (value) => {
-                    item.value = value;
+                    item.label = value;
                   },
                 },
               }),
               createElement("el-input", {
                 style: "width: 90px",
                 props: {
-                  value: item.label,
+                  value: item.value,
+                },
+                attrs: {
+                  placeholder: "value",
                 },
                 on: {
                   input: (value) => {
-                    item.label = value;
+                    item.value = value;
                   },
                 },
               }),
@@ -666,6 +673,8 @@ export default {
               });
             } else if (["switch"].includes(self.widgetFormSelect.type)) {
               $slots = createSwitch("options.defaultValue");
+            } else if (["checkbox"].includes(self.widgetFormSelect.type)) {
+              $slots = createCheckboxGroup("options.defaultValue", self.widgetFormSelect.options.options);
             } else {
               $slots = createInput(`options.defaultValue`);
             }
@@ -748,23 +757,54 @@ export default {
             ]);
             break;
           case "columns":
-            $slots = (self.widgetFormSelect.options.columns || []).map((item, index) => {
-              return createElement(
-                "div",
+            $slots = [
+              (self.widgetFormSelect.options.columns || []).map((item, index) => {
+                return createElement(
+                  "div",
+                  {
+                    props: {
+                      key: index,
+                    },
+                  },
+                  [
+                    createInputNumber(`options.columns[${index}].span`, {
+                      min: 1,
+                      step: 1,
+                      "controls-position": "right",
+                    }),
+                    createElement("el-button", {
+                      props: {
+                        type: "danger",
+                        icon: "el-icon-delete",
+                        circle: true,
+                      },
+                      on: {
+                        click: () => {
+                          self.widgetFormSelect.options.columns.splice(index, 1);
+                        },
+                      },
+                    }),
+                  ]
+                );
+              }),
+              createElement(
+                "el-button",
                 {
                   props: {
-                    key: index,
+                    type: "primary",
+                  },
+                  on: {
+                    click: () => {
+                      self.widgetFormSelect.options.columns.push({
+                        span: 12,
+                        list: [],
+                      });
+                    },
                   },
                 },
-                [
-                  createInputNumber(item.span, {
-                    min: 1,
-                    step: 1,
-                    "controls-position": "right",
-                  }),
-                ]
-              );
-            });
+                "添加"
+              ),
+            ];
             break;
           default:
             // 不存在 终止

@@ -10,13 +10,17 @@
                 <draggable
                   tag="ul"
                   :list="field.children"
-                  v-bind="{ group: { name: 'people', pull: 'clone', put: false }, sort: false, ghostClass: 'ghost' }"
+                  v-bind="{
+                    group: { name: 'people', pull: 'clone', put: false },
+                    sort: false,
+                    ghostClass: 'ghost',
+                  }"
                   @end="handleMoveEnd"
                   @start="handleMoveStart"
                   :move="handleMove"
                 >
                   <template v-for="(item, index) in field.children">
-                    <li class="form-edit-widget-label" :class="{ 'no-put': item.type == 'divider' }" :key="index">
+                    <li class="form-edit-widget-label" :data-type="item.type" :class="{ 'no-put': item.type == 'divider' }" :key="index">
                       <a
                         ><i class="icon iconfont" :class="item.icon"></i><span>{{ item.name }}</span></a
                       >
