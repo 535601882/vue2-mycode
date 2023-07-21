@@ -49,10 +49,10 @@ export const basicComponents = [
     options: {
       span: 24,
       defaultValue: 0,
-      min: "",
-      max: "",
+      min: 0,
+      max: 10,
       step: 1,
-      precision: "",
+      precision: undefined,
       showLabel: true,
       disabled: false,
       controlsPosition: "",
@@ -439,6 +439,7 @@ export const layoutComponents = [
     icon: "icon-grid-",
     labelWidth: undefined,
     options: {
+      span: 24,
       gutter: 0,
       justify: "start",
       align: "top",

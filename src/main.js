@@ -15,6 +15,7 @@ const setting = require("@/config/setting");
 
 import("@/permission");
 import components from "@/components";
+import Utils from "@/libs/Utils";
 for (let name in components) {
   Vue.component(name, components[name]);
 }
@@ -41,6 +42,7 @@ Vue.use(ElementUI, {
 Vue.config.productionTip = false;
 Vue.prototype.$api = api;
 Vue.prototype.$globalSetting = setting;
+Vue.prototype.$utils = Utils;
 
 new Vue({
   router,

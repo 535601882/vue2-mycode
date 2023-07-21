@@ -13,12 +13,21 @@
         <draggable
           class=""
           v-model="widgetForm.list"
-          v-bind="{ group: 'people', ghostClass: 'ghost', animation: 200, handle: '.drag-widget' }"
-          @end="handleMoveEnd"
+          v-bind="{
+            group: 'people',
+            ghostClass: 'ghost',
+            animation: 200,
+            handle: '.drag-widget',
+          }"
           @add="handleWidgetAdd"
         >
           <transition-group name="fade" tag="div" class="widget-form-list clearfix">
-            <el-col v-for="(element, index) in widgetForm.list" :span="element.options.span" :key="element.key">
+            <el-col
+              v-for="(element, index) in widgetForm.list"
+              :span="element.options.span"
+              :key="element.key || element.model"
+              :data-type="element.type"
+            >
               <ComponentEditor
                 :index="index"
                 :active="selectWidget.key === element.key"
@@ -36,12 +45,17 @@
                     :align="element.options.align"
                     @click.native="handleSelectWidget(index)"
                   >
-                    <el-col v-for="(col, colIndex) in element.columns" :key="colIndex" :span="col.span ? col.span : 0">
+                    <el-col v-for="(col, colIndex) in element.options.columns" :key="colIndex" :span="col.span ? col.span : 0" :data-type="col.type">
                       <draggable
                         v-model="col.list"
                         :no-transition-on-drag="true"
-                        v-bind="{ group: 'people', ghostClass: 'ghost', animation: 200, handle: '.drag-widget' }"
-                        @end="handleMoveEnd"
+                        v-bind="{
+                          group: 'people',
+                          ghostClass: 'ghost',
+                          animation: 200,
+                          handle: '.drag-widget',
+                        }"
+                        @end="handleColMoveEnd"
                         @add="handleWidgetColAdd($event, element, colIndex)"
                       >
                         <transition-group name="fade" tag="div" class="widget-col-list">
@@ -83,6 +97,7 @@
 import Draggable from "vuedraggable";
 import WidgetFormItem from "./WidgetFormItem";
 import ComponentEditor from "../components/ComponentEditor/main.vue";
+import { cloneDeep } from "lodash";
 
 export default {
   components: {
@@ -112,26 +127,26 @@ export default {
     };
   },
   methods: {
-    handleMoveEnd({ newIndex, oldIndex }) {
-      console.log("index", newIndex, oldIndex);
+    handleMove() {
+      console.log("move----");
+    },
+    handleColMoveEnd({ newIndex, oldIndex }, row, colIndex) {
+      console.log("moveEnd-----", newIndex, oldIndex, row, colIndex);
     },
     handleSelectWidget(index) {
       console.log(index, "#####");
       this.selectWidget = this.widgetForm.list[index];
     },
     handleWidgetAdd(evt) {
-      console.log("add", evt);
-      console.log("end", evt);
+      console.log("add", evt, "to", evt.to);
       const newIndex = evt.newIndex;
-      const to = evt.to;
-      console.log(to);
 
       //为拖拽到容器的元素添加唯一 key
       const key = Date.parse(new Date()) + "_" + Math.ceil(Math.random() * 99999);
       this.$set(this.widgetForm.list, newIndex, {
-        ...this.widgetForm.list[newIndex],
+        ...cloneDeep(this.widgetForm.list[newIndex]),
         options: {
-          ...this.widgetForm.list[newIndex].options,
+          ...cloneDeep(this.widgetForm.list[newIndex].options),
           remoteFunc: "func_" + key,
         },
         key,
@@ -139,30 +154,6 @@ export default {
         model: this.widgetForm.list[newIndex].type + "_" + key,
         rules: [],
       });
-
-      if (
-        this.widgetForm.list[newIndex].type === "radio" ||
-        this.widgetForm.list[newIndex].type === "checkbox" ||
-        this.widgetForm.list[newIndex].type === "select"
-      ) {
-        this.$set(this.widgetForm.list, newIndex, {
-          ...this.widgetForm.list[newIndex],
-          options: {
-            ...this.widgetForm.list[newIndex].options,
-            options: this.widgetForm.list[newIndex].options.options.map((item) => ({
-              ...item,
-            })),
-          },
-        });
-      }
-
-      if (this.widgetForm.list[newIndex].type === "grid") {
-        this.$set(this.widgetForm.list, newIndex, {
-          ...this.widgetForm.list[newIndex],
-          columns: this.widgetForm.list[newIndex].options.columns.map((item) => ({ ...item })),
-        });
-      }
-
       this.selectWidget = this.widgetForm.list[newIndex];
     },
     handleWidgetColAdd($event, row, colIndex) {
@@ -172,48 +163,32 @@ export default {
       const item = $event.item;
 
       // 防止布局元素的嵌套拖拽
-      if (item.className.indexOf("data-grid") >= 0) {
+      if (item.dataset.type === "grid") {
         // 如果是列表中拖拽的元素需要还原到原来位置
-        item.tagName === "DIV" && this.widgetForm.list.splice(oldIndex, 0, row.columns[colIndex].list[newIndex]);
+        item.tagName === "DIV" && this.widgetForm.list.splice(oldIndex, 0, row.options.columns[colIndex].list[newIndex]);
 
-        row.columns[colIndex].list.splice(newIndex, 1);
-
+        row.options.columns[colIndex].list.splice(newIndex, 1);
+        this.$message.warning("栅格布局不允许嵌套");
         return false;
       }
 
-      console.log("from", item);
+      // console.log("from", item);
 
       const key = Date.parse(new Date()) + "_" + Math.ceil(Math.random() * 99999);
 
-      this.$set(row.columns[colIndex].list, newIndex, {
-        ...row.columns[colIndex].list[newIndex],
+      this.$set(row.options.columns[colIndex].list, newIndex, {
+        ...cloneDeep(row.options.columns[colIndex].list[newIndex]),
         options: {
-          ...row.columns[colIndex].list[newIndex].options,
+          ...cloneDeep(row.options.columns[colIndex].list[newIndex].options),
           remoteFunc: "func_" + key,
         },
         key,
         // 绑定键值
-        model: row.columns[colIndex].list[newIndex].type + "_" + key,
+        model: row.options.columns[colIndex].list[newIndex].type + "_" + key,
         rules: [],
       });
 
-      if (
-        row.columns[colIndex].list[newIndex].type === "radio" ||
-        row.columns[colIndex].list[newIndex].type === "checkbox" ||
-        row.columns[colIndex].list[newIndex].type === "select"
-      ) {
-        this.$set(row.columns[colIndex].list, newIndex, {
-          ...row.columns[colIndex].list[newIndex],
-          options: {
-            ...row.columns[colIndex].list[newIndex].options,
-            options: row.columns[colIndex].list[newIndex].options.options.map((item) => ({
-              ...item,
-            })),
-          },
-        });
-      }
-
-      this.selectWidget = row.columns[colIndex].list[newIndex];
+      this.selectWidget = row.options.columns[colIndex].list[newIndex];
     },
     // 删除
     handleWidgetDelete({ index, list }) {
@@ -235,26 +210,15 @@ export default {
     handleWidgetClone({ index, list }) {
       const key = Date.parse(new Date().toString()) + "_" + Math.ceil(Math.random() * 99999);
       let cloneData = {
-        ...list[index],
+        ...cloneDeep(list[index]),
         options: {
-          ...list[index].options,
+          ...cloneDeep(list[index].options),
           remoteFunc: "func_" + key,
         },
         key,
         model: list[index].type + "_" + key,
         rules: list[index].rules || [],
       };
-
-      if (list[index].type === "radio" || list[index].type === "checkbox" || list[index].type === "select") {
-        cloneData = {
-          ...cloneData,
-          options: {
-            ...cloneData.options,
-            options: cloneData.options.options.map((item) => ({ ...item })),
-          },
-        };
-      }
-
       list.splice(index, 0, cloneData);
 
       this.$nextTick(() => {

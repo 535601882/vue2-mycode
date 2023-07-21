@@ -19,7 +19,7 @@
               :justify="item.options.justify"
               :align="item.options.align"
             >
-              <el-col v-for="(col, colIndex) in item.columns" :key="colIndex" :span="col.span">
+              <el-col v-for="(col, colIndex) in item.options.columns" :key="colIndex" :span="col.span">
                 <template v-for="citem in col.list">
                   <el-form-item v-if="citem.type == 'blank'" :label="citem.name" :prop="citem.model" :key="citem.key">
                     <slot :name="citem.model" :model="models"></slot>
