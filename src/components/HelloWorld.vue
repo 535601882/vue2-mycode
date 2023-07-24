@@ -17,6 +17,9 @@ export default {
       // list: null
     };
   },
+  created() {
+    console.log(this.msg + "Hello World creaeted");
+  },
   list: null,
   mounted() {
     this.getList();

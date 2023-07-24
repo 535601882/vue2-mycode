@@ -41,6 +41,11 @@ const routes = [
     name: "GridDashBoard",
     component: () => import(/* webpackChunkName: "GridDashBoard" */ "@/views/GridDashBoard/index.vue"),
   },
+  {
+    path: "/gsap-page",
+    name: "GsapPage",
+    component: () => import(/* webpackChunkName: "GsapPage" */ "@/views/GsapPage/index.vue"),
+  },
   // ROUTE IMPORT
   //   ],
   // },

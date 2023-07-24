@@ -8,6 +8,7 @@ import QuillEditor from "./QuillEditor";
 import DemoComp from "./DemoComp";
 import AppTable from "./AppTable";
 import FormConfigProvider from "./FormConfigProvider/index.js";
+import PageContainer from "./PageContainer";
 // COMPONENT IMPORTS
 
 export default {
@@ -24,5 +25,6 @@ export default {
   DemoComp,
   AppTable,
   FormConfigProvider,
+  PageContainer,
   // COMPONENT EXPORTS
 };
