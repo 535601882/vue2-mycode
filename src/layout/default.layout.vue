@@ -93,6 +93,12 @@ export default {
           icon: "el-icon-location",
           children: [],
         },
+        {
+          title: "gsapPage",
+          path: "/gsap-page",
+          icon: "el-icon-location",
+          children: [],
+        },
       ],
       activeIndex: "/",
     };

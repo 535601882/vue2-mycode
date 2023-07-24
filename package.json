@@ -16,6 +16,7 @@
     "clipboard": "^2.0.11",
     "core-js": "^3.6.5",
     "element-ui": "^2.15.13",
+    "gsap": "^3.12.2",
     "husky": "^8.0.3",
     "katex": "^0.15.2",
     "lint-staged": "^13.2.3",
@@ -59,5 +60,9 @@
       "npm run lint",
       "git add"
     ]
+  },
+  "validate-branch-name": {
+    "pattern": "^(master|main|develop){1}$|^(feature|fixbug|hotfix|release)(\/|-).+$",
+    "errorMsg": "分支名称校验不通过！校验规则 ^(master|main|develop){1}$|^(feature|fixbug|hotfix|release)(/|-).+$"
   }
 }

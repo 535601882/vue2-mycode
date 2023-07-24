@@ -8,6 +8,9 @@
     <h1>router</h1>
     <el-button type="primary" @click="handleAddRouterClick">添加一个新路由</el-button>
     <el-button type="primary" @click="handleGetRouterClick">获取当前路由列表</el-button>
+    <hr />
+    <DemoComp>112</DemoComp>
+    <HelloWorld msg="axios hello world"></HelloWorld>
   </div>
 </template>
 
