@@ -46,6 +46,11 @@ const routes = [
     name: "GsapPage",
     component: () => import(/* webpackChunkName: "GsapPage" */ "@/views/GsapPage/index.vue"),
   },
+  {
+    path: "/three-js",
+    name: "ThreeJs",
+    component: () => import(/* webpackChunkName: "ThreeJs" */ "@/views/ThreeJs/index.vue"),
+  },
   // ROUTE IMPORT
   //   ],
   // },

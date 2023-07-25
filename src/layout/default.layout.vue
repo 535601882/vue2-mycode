@@ -99,6 +99,12 @@ export default {
           icon: "el-icon-location",
           children: [],
         },
+        {
+          title: "threeJs",
+          path: "/three-js",
+          icon: "el-icon-location",
+          children: [],
+        },
       ],
       activeIndex: "/",
     };
