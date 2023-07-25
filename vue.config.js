@@ -71,6 +71,14 @@ module.exports = {
 
       config.optimization.runtimeChunk("single");
     }
+
+    // 新建规则处理gltf文件
+    config.module
+      .rule('gltf')
+      .test(/\.gltf$/)
+      .use('gltf-webpack-loader')
+      .loader('gltf-webpack-loader')
+      .end();
   },
   // 生产环境是否生成 sourceMap 文件
   productionSourceMap: false,
