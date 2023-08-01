@@ -10,6 +10,8 @@
     <el-button type="primary" @click="handleGetRouterClick">获取当前路由列表</el-button>
     <hr />
     <DemoComp>112</DemoComp>
+    <el-button type="primary" @click="goPage(1)">跳转1</el-button>
+    <el-button type="primary" @click="goPage(2)">跳转2</el-button>
     <HelloWorld msg="axios hello world"></HelloWorld>
   </div>
 </template>
@@ -21,9 +23,11 @@ export default {
   data() {
     return {};
   },
+  props: ["params"],
   computed: {},
   created() {
     this.handleClick();
+    console.log("axios page created", this.params);
   },
   methods: {
     handleClick() {
@@ -55,8 +59,33 @@ export default {
     handleGetRouterClick() {
       console.log(this.$router.getRoutes(), this.$router);
     },
+    goPage(num) {
+      this.$router.push({
+        name: "Axios",
+        query: {
+          name: num,
+        },
+      });
+    },
   },
   mounted() {},
+  watch: {
+    $route(e, t) {
+      console.log("axios watch $route", e, t);
+    },
+  },
+  beforeRouteEnter(to, from, next) {
+    console.log("axios beforeRouteEnter", to, from);
+    next();
+  },
+  beforeRouteUpdate(to, from, next) {
+    console.log("axios beforeRouteUpdate", to, from);
+    next();
+  },
+  beforeRouteLeave(to, from, next) {
+    console.log("axios beforeRouteLeave", to, from);
+    next();
+  },
 };
 </script>
 

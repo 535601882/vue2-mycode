@@ -53,6 +53,7 @@
     "husky": "^8.0.0",
     "mockjs": "1.0.1-beta3",
     "prettier": "^2.2.1",
+    "progress-bar-webpack-plugin": "^2.1.0",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
     "vue-template-compiler": "^2.6.11"

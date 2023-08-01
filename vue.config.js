@@ -1,9 +1,15 @@
 const path = require("path");
+const webpack = require("webpack");
 const CompressionPlugin = require("compression-webpack-plugin");
+const FileListPlugin = require("./FileListPlugin.js");
+const ProgressBarPlugin = require("progress-bar-webpack-plugin");
+
 const setting = require("./src/config/setting.js");
 function resolve(dir) {
   return path.join(__dirname, dir);
 }
+process.env.VUE_APP_TITLE = "测试";
+
 module.exports = {
   css: {
     loaderOptions: {
@@ -26,6 +32,21 @@ module.exports = {
         keep_fnames: false,
         warnings: false,
       };
+      // 打包文件大小配置
+      config.performance = {
+        hints: false,
+        maxEntrypointSize: 1024 * 1024,
+        maxAssetSize: 1024 * 1024
+      }
+      return {
+        plugins: [
+          //在每一个生成的chunk顶部添加一个banner
+          new webpack.BannerPlugin(" 在每一个生成的chunk顶部添加一个banner "),
+          // build进度条
+          new ProgressBarPlugin(),
+          new FileListPlugin(),
+        ],
+      };
     }
   },
   chainWebpack: (config) => {
@@ -46,25 +67,51 @@ module.exports = {
       );
 
       config.optimization.splitChunks({
+        automaticNameDelimiter: "-",
         chunks: "all",
         cacheGroups: {
           libs: {
+            // 指定chunks名称
             name: "chunk-libs",
+            // 符合组的要求就给构建
             test: /[\\/]node_modules[\\/]/,
+            // 优先级：数字越大优先级越高，因为默认值为0，所以自定义的一般是负数形式,
             priority: 10,
-            chunks: "initial", // only package third parties that are initially dependent
+            chunks: "initial", // 只打包最初依赖的第三方
+            minSize: 0, // 设置最小大小为0，确保每个库都被拆分成一个单独的chunk
+            maxSize: 1024 * 1024, // 设置最大大小为244K，确保每个chunk不超过244K
+            minChunks: 2,
           },
+          // 将vue相关的单独拆分出来
+          vue: {
+            name: "vue",
+            test: /[\\/]node_modules[\\/](vue(.*)|core-js)[\\/]/,
+            chunks: "initial",
+            priority: 20,
+          },
+          // 将element单独拆分出来
           elementUI: {
             name: "chunk-elementUI", // split elementUI into a single package
-            priority: 20, // the weight needs to be larger than libs and app or it will be packaged into libs or app
+            priority: 30, // the weight needs to be larger than libs and app or it will be packaged into libs or app
             test: /[\\/]node_modules[\\/]_?element-ui(.*)/, // in order to adapt to cnpm
           },
           commons: {
             name: "chunk-commons",
             test: resolve("src/components"), // can customize your rules
             minChunks: 3, //  minimum common number
-            priority: 5,
-            reuseExistingChunk: true,
+            priority: 40,
+            reuseExistingChunk: true
+          },
+          utils: {
+            name: "chunk-utils",
+            test: /[\\/]node_modules[\\/](lodash|moment)[\\/]/,
+            priority: 50,
+            chunks: "initial"
+          },
+          extra: {
+            name: "chunk-layout",
+            test: resolve("src/layout"),
+            priority: 60,
           },
         },
       });
@@ -74,10 +121,10 @@ module.exports = {
 
     // 新建规则处理gltf文件
     config.module
-      .rule('gltf')
+      .rule("gltf")
       .test(/\.gltf$/)
-      .use('gltf-webpack-loader')
-      .loader('gltf-webpack-loader')
+      .use("gltf-webpack-loader")
+      .loader("gltf-webpack-loader")
       .end();
   },
   // 生产环境是否生成 sourceMap 文件
@@ -85,5 +132,5 @@ module.exports = {
   devServer: {
     port: 3110,
     before: setting.USE_MOCK && require("./mock/server.js"),
-  },
+  }
 };

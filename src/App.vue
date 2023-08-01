@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <commponent :is="layout">
-      <router-view />
+      <router-view :params="$route.query" />
       <RouterView name="LeftSidebar" class="view order-1 w-full"></RouterView>
       <RouterView name="RightSidebar" class="view order-3 w-full"></RouterView>
     </commponent>
