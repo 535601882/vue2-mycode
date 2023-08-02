@@ -12,6 +12,7 @@ router.beforeEach((to, from, next) => {
     if (to.path === "/login") {
       next({ path: "/" });
     } else {
+      debugger;
       if (store.getters["auth/roles"].length === 0) {
         // 判断当前用户是否已拉取完 user_info 信息
         store
