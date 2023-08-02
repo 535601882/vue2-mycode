@@ -2,6 +2,8 @@
 <template>
   <PageContainer>
     <div id="panorama-container"></div>
+    <icon-svg name="admin" width="30px" height="30px" />
+    <icon-svg name="admin-text" />
   </PageContainer>
 </template>
 <script>

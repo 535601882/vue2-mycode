@@ -1,3 +1,22 @@
+import log from "./utils.log.js";
+let utils = {
+  log,
+};
+
+/**
+ * @description 打开新页面
+ * @param {String} url 地址
+ */
+utils.open = function (url) {
+  var a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("target", "_blank");
+  a.setAttribute("id", "admin-menu-link");
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(document.getElementById("admin-menu-link"));
+};
+
 /**
  * 利用字符串表达式操作对象
  * @param obj
@@ -38,4 +57,5 @@ export function ExpressionForObject(obj) {
 
 export default {
   ExpressionForObject,
+  ...utils,
 };

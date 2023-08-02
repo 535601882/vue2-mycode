@@ -9,6 +9,7 @@ import DemoComp from "./DemoComp";
 import AppTable from "./AppTable";
 import FormConfigProvider from "./FormConfigProvider/index.js";
 import PageContainer from "./PageContainer";
+import IconSvg from "./IconSvg";
 // COMPONENT IMPORTS
 
 export default {
@@ -26,5 +27,6 @@ export default {
   AppTable,
   FormConfigProvider,
   PageContainer,
+  IconSvg,
   // COMPONENT EXPORTS
 };
