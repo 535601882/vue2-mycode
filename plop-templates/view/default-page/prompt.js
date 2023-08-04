@@ -48,6 +48,7 @@ module.exports = {
       template: `\t{
     path: "/{{dashCase name}}",
     name: "${aliasName}",
+    meta: { title: '${aliasName}',keepalive: true},
     component: () => import(/* webpackChunkName: "${aliasName}" */ "@/views/${aliasName}/index.vue"),
   },\n$1`,
       type: 'modify',

@@ -1,6 +1,19 @@
 import log from "./utils.log.js";
+import cookies from "./utils.cookies.js";
+import storage from "./utils.storage.js";
 let utils = {
   log,
+  cookies,
+  storage,
+};
+
+/**
+ * @description 更新标题
+ * @param {String} title 标题
+ */
+utils.title = function (titleText) {
+  const processTitle = process.env.VUE_APP_TITLE;
+  window.document.title = `${processTitle}${titleText ? ` | ${titleText}` : ""}`;
 };
 
 /**

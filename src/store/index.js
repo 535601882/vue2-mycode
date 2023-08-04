@@ -19,6 +19,15 @@ export default new Vuex.Store({
     setLayout({ commit }, data) {
       commit("SETLAYOUT", data);
     },
+    load({ dispatch }) {
+      // eslint-disable-next-line no-async-promise-executor
+      return new Promise(async (resolve) => {
+        // DB -> store 持久化数据加载上次退出时的多页列表
+        await dispatch("page/openedLoad", null, { root: true });
+        // end
+        resolve();
+      });
+    },
   },
   modules: {
     ...modules,

@@ -1,18 +1,28 @@
 <template>
-  <el-container>
+  <el-container class="full-height">
     <el-aside width="200px">
       <recursive-menu :menu-items="menus" :active-index="activeIndex" @onSelect="handleSelectMenu"></recursive-menu>
     </el-aside>
-    <el-main>
-      <slot></slot>
-    </el-main>
+    <el-container direction="vertical">
+      <el-header>
+        <error-log></error-log>
+      </el-header>
+      <div class="main-layout">
+        <tabs></tabs>
+        <el-main class="position-r overflow-hidden">
+          <slot></slot>
+        </el-main>
+      </div>
+    </el-container>
   </el-container>
 </template>
 <script>
 import RecursiveMenu from "./component/RecursiveMenu.vue";
+import tabs from "./component/tabs";
 export default {
   components: {
     RecursiveMenu,
+    tabs,
   },
   data() {
     return {
@@ -105,6 +115,12 @@ export default {
           icon: "el-icon-location",
           children: [],
         },
+        {
+          title: "log",
+          path: "/log",
+          icon: "el-icon-location",
+          children: [],
+        },
       ],
       activeIndex: "/",
     };
@@ -121,3 +137,11 @@ export default {
   },
 };
 </script>
+<style lang="scss" scoped>
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+}
+</style>

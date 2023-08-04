@@ -1,8 +1,8 @@
 <!--操作路由-->
 <template>
-  <div>
+  <PageContainer>
     <h1>router</h1>
-  </div>
+  </PageContainer>
 </template>
 
 <script>

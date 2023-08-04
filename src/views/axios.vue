@@ -1,6 +1,6 @@
 <!--axios测试-->
 <template>
-  <div>
+  <PageContainer>
     <water-mark inputDestroy></water-mark>
     <el-button type="primary" @click="handleClick">发送请求</el-button>
     <el-button type="primary" @click="handleTimeOut">失效</el-button>
@@ -13,7 +13,7 @@
     <el-button type="primary" @click="goPage(1)">跳转1</el-button>
     <el-button type="primary" @click="goPage(2)">跳转2</el-button>
     <HelloWorld msg="axios hello world"></HelloWorld>
-  </div>
+  </PageContainer>
 </template>
 
 <script>

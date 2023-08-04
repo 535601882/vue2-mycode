@@ -10,6 +10,8 @@ import AppTable from "./AppTable";
 import FormConfigProvider from "./FormConfigProvider/index.js";
 import PageContainer from "./PageContainer";
 import IconSvg from "./IconSvg";
+import ErrorLog from "./ErrorLog";
+import Pagination from "./Pagination";
 // COMPONENT IMPORTS
 
 export default {
@@ -28,5 +30,7 @@ export default {
   FormConfigProvider,
   PageContainer,
   IconSvg,
+  ErrorLog,
+  Pagination,
   // COMPONENT EXPORTS
 };

@@ -13,4 +13,10 @@ new Vue({
   i18n,
   store,
   render: (h) => h(App),
+  mounted() {
+    // 加载一系列的设置
+    this.$store.dispatch("load");
+    // 获取并记录用户 UA
+    this.$store.commit("ua/get");
+  },
 }).$mount("#app");

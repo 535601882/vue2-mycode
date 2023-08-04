@@ -1,18 +1,23 @@
 import router from "@/router";
 import store from "@/store";
 import { Message } from "element-ui";
+// 进度条
+import NProgress from "nprogress";
+import "nprogress/nprogress.css";
+import utils from "@/libs/utils.js";
 
 // 白名单
 const whiteList = ["/login", "/register", "/404"];
 
 router.beforeEach((to, from, next) => {
+  // 进度条
+  NProgress.start();
   const token = store.getters["auth/accessToken"];
   if (token) {
     /* has token*/
     if (to.path === "/login") {
       next({ path: "/" });
     } else {
-      debugger;
       if (store.getters["auth/roles"].length === 0) {
         // 判断当前用户是否已拉取完 user_info 信息
         store
@@ -46,4 +51,13 @@ router.beforeEach((to, from, next) => {
   }
 });
 
-router.afterEach(() => {});
+router.afterEach((to) => {
+  // 进度条
+  NProgress.done();
+  // 需要的信息
+  const app = router.app;
+  // 多页控制 打开新的页面
+  app.$store.dispatch("page/open", to);
+  // 更改标题
+  utils.title(to.meta.title);
+});

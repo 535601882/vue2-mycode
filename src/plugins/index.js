@@ -1,4 +1,5 @@
 import "normalize.css";
+import "@/assets/scss/global.scss";
 import element from "./element";
 // 旧版本浏览器提示
 import "./support";
@@ -13,6 +14,9 @@ import utils from "@/libs/utils";
 import pluginError from "@/plugins/error";
 import pluginLog from "@/plugins/log";
 import pluginOpen from "@/plugins/open";
+// 右键菜单
+import "./contextmenu/styles/index.scss";
+import contentmenu from "./contextmenu";
 
 export default {
   // eslint-disable-next-line no-unused-vars
@@ -37,9 +41,11 @@ export default {
     Vue.use(pluginError);
     Vue.use(pluginLog);
     Vue.use(pluginOpen);
+    Vue.use(contentmenu);
 
     Vue.use(element, {
       i18n,
+      size: "small",
     });
   },
 };

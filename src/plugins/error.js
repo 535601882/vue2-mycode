@@ -1,4 +1,6 @@
+import store from "@/store";
 import utils from "@/libs/utils";
+const { name } = require("/package");
 
 export default {
   // eslint-disable-next-line no-unused-vars
@@ -6,15 +8,15 @@ export default {
     Vue.config.errorHandler = function (err, vm, info) {
       Vue.nextTick(() => {
         // // 添加 log
-        // store.dispatch('d2admin/log/add', {
-        //   type: 'error',
-        //   err,
-        //   vm,
-        //   info
-        // })
+        store.dispatch("log/add", {
+          type: "error",
+          err,
+          vm,
+          info,
+        });
         // 只在开发模式下打印 log
         if (process.env.NODE_ENV === "development") {
-          utils.log.capsule("D2Admin", "ErrorHandler", "danger");
+          utils.log.capsule(name, "ErrorHandler", "danger");
           utils.log.danger(">>>>>> 错误信息 >>>>>>");
           console.log(info);
           utils.log.danger(">>>>>> Vue 实例 >>>>>>");
@@ -23,6 +25,10 @@ export default {
           console.log(err);
         }
       });
+    };
+
+    window.onerror = function (e) {
+      console.log("错误====================", e);
     };
   },
 };

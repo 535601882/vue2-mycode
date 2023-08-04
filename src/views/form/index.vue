@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <PageContainer>
     <MakingForm style="height: 100vh" upload preview generate-code generate-json clearable></MakingForm>
-  </div>
+  </PageContainer>
 </template>
 
 <script>
 export default {
-  name: "index",
+  name: "Form",
   components: {},
   data() {
     return {};

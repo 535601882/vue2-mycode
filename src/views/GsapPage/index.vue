@@ -1,5 +1,6 @@
 <template>
   <PageContainer>
+    <template #header>哈哈哈标题</template>
     <div class="circle block">DEMO1</div>
     <!--    <svg id="svg" viewBox="0 0 100 100">-->
     <!--      <rect class="svgBox" fill="#28a92b" x="0" y="35" width="30" height="30" rx="2" />-->
@@ -35,6 +36,7 @@
       <el-button type="primary" @click="tween.timeScale(0.5)">timeScale 0.5</el-button>
       <el-button type="primary" @click="tween.kill()">kill</el-button>
     </div>
+    <template #footer>哈哈哈结尾</template>
   </PageContainer>
 </template>
 <script>

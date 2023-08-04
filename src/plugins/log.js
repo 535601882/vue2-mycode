@@ -1,4 +1,4 @@
-// import store from "@/store";
+import store from "@/store";
 import utils from "@/libs/utils";
 
 export default {
@@ -9,10 +9,10 @@ export default {
     // 快速记录日志
     Vue.prototype.$logAdd = function (info, show = true) {
       // store 赋值
-      // store.dispatch('d2admin/log/add', {
-      //   type: 'log',
-      //   info
-      // })
+      store.dispatch("log/add", {
+        type: "log",
+        info,
+      });
       // 显示在控制台
       if (show && process.env.NODE_ENV === "development") {
         utils.log.default(info);
