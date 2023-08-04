@@ -18,7 +18,6 @@ module.exports = {
     loaderOptions: {
       sass: {
         prependData: `
-          @import "@/assets/scss/global.scss";
           @import "@/assets/scss/_variable.scss";
           `, //引入全局变量
       },
@@ -66,18 +65,17 @@ module.exports = {
     // })
 
     // 利用svg-sprite-loader处理svg
-    const svgRule = config.module.rule('svg')
-    svgRule.uses.clear()
-    svgRule
-      .include
-      .add(resolve('src/assets/svg-icons/icons'))
+    const svgRule = config.module.rule("svg");
+    svgRule.uses.clear();
+    svgRule.include
+      .add(resolve("src/assets/svg-icons/icons"))
       .end()
-      .use('svg-sprite-loader')
-      .loader('svg-sprite-loader')
+      .use("svg-sprite-loader")
+      .loader("svg-sprite-loader")
       .options({
-        symbolId: 'icon-[name]'// icon-xxx 自定义（组件识别到底使用哪个 svg 的关键）
+        symbolId: "icon-[name]", // icon-xxx 自定义（组件识别到底使用哪个 svg 的关键）
       })
-      .end()
+      .end();
     // 重新设置 alias
     config.resolve.alias
       .set("@", resolve("src"))

@@ -1,9 +1,12 @@
 <!--全景图-->
 <template>
   <PageContainer>
+    <template #header>哈哈哈标题</template>
     <div id="panorama-container"></div>
     <icon-svg name="admin" width="30px" height="30px" />
     <icon-svg name="admin-text" />
+    <span class="haha cheng-mb-10">哈哈哈</span>
+    <template #footer>哈哈哈结尾</template>
   </PageContainer>
 </template>
 <script>
@@ -18,8 +21,13 @@ export default {
     return {};
   },
   created() {
+    this.$utils.storage.set("aaa", "hahhah");
+    console.log(this.$utils.storage.get("aaa"));
     this.width = 1024;
     this.height = 768;
+    Promise.reject();
+    this.$logAdd("打印测试信息", true);
+    throw new Error("手动触发的错误");
   },
   mounted() {
     // demo1.init().createGltf();
@@ -153,3 +161,11 @@ export default {
   methods: {},
 };
 </script>
+
+<style lang="scss" scoped>
+.haha {
+  color: $color-warning;
+  @extend %unable-select;
+  @extend %card;
+}
+</style>

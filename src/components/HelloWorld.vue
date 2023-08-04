@@ -1,6 +1,6 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
+    <h1 class="cheng-mb-30">{{ msg }}</h1>
     {{ $options.list }}
   </div>
 </template>

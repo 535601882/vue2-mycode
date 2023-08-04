@@ -21,7 +21,7 @@
           }"
           @add="handleWidgetAdd"
         >
-          <transition-group name="fade" tag="div" class="widget-form-list clearfix">
+          <transition-group name="fade" tag="div" class="widget-form-list cheng-clearfix">
             <el-col
               v-for="(element, index) in widgetForm.list"
               :span="element.options.span"

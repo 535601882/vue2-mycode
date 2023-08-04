@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <PageContainer>
     <el-button type="primary" @click="handleRest">取消</el-button>
     <el-button type="primary" @click="handleSave">保存</el-button>
     <el-button type="primary" @click="handleClick">添加</el-button>
@@ -25,7 +25,7 @@
       <hr />
       <form-config-provider></form-config-provider>
     </div>
-  </div>
+  </PageContainer>
 </template>
 <script>
 import VueGridLayout from "vue-grid-layout";

@@ -1,5 +1,5 @@
 <template>
-  <div class="home">
+  <PageContainer>
     <div class="home" @click="handleClick">home {{ $t("hello") }} {{ $t("demo") }}</div>
     <el-button @click="handleToggle">切换语言 {{ $i18n.locale }}</el-button>
     <el-button @click="handleSetLang">设置语言</el-button>
@@ -7,7 +7,7 @@
     <el-button @click="handleToggleLayout">切换layout</el-button>
     <hr />
     <app-table :table="table"></app-table>
-  </div>
+  </PageContainer>
 </template>
 
 <script>
