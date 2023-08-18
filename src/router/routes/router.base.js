@@ -66,6 +66,12 @@ const routes = [
     meta: { title: "Log", keepalive: true },
     component: () => import(/* webpackChunkName: "Log" */ "@/views/Log/index.vue"),
   },
+  {
+    path: "/d3-demo",
+    name: "d3Demo",
+    meta: { title: "d3Demo", keepalive: true },
+    component: () => import(/* webpackChunkName: "d3Demo" */ "@/views/d3Demo/index.vue"),
+  },
   // ROUTE IMPORT
   //   ],
   // },
