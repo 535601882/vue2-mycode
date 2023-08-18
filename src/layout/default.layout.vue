@@ -121,6 +121,12 @@ export default {
           icon: "el-icon-location",
           children: [],
         },
+        {
+          title: "d3-demo",
+          path: "/d3-demo",
+          icon: "el-icon-location",
+          children: [],
+        },
       ],
       activeIndex: "/",
     };

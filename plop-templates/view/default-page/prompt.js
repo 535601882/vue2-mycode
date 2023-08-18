@@ -31,7 +31,7 @@ module.exports = {
     }
   }],
   actions: data => {
-    const aliasName = '{{properCase name}}'
+    const aliasName = '{{camelCase name}}'
     const actions = [{
       type: "add",
       path: `src/views/${aliasName}/index.vue`,

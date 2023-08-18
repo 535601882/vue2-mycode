@@ -1,18 +1,21 @@
+<!--d3Demo页面-->
 <template>
   <PageContainer>
-    <img src="http://www.baidu.com/a.jpg" alt="" />
+    <lineChart></lineChart>
   </PageContainer>
 </template>
 <script>
+import lineChart from "./components/lineChart";
 export default {
-  name: "log",
+  name: "d3Demo",
   props: {},
+  components: {
+    lineChart,
+  },
   data() {
     return {};
   },
-  created() {
-    console.log(this.$i18n);
-  },
+  created() {},
   mounted() {},
   methods: {},
 };

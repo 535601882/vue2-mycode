@@ -35,7 +35,7 @@ module.exports = {
     }
   ],
   actions(data) {
-    const name = "{{name}}"
+    const name = "{{camelCase name}}"
     const {blocks} = data
     const options = ['state',"mutations"]
     const joinFlag = `,
