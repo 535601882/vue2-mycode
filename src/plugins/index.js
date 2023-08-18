@@ -45,7 +45,6 @@ export default {
 
     Vue.use(element, {
       i18n,
-      size: "small",
     });
   },
 };
