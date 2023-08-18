@@ -10,40 +10,44 @@ export default {
   data() {
     return {
       dataset: [2.5, 2.1, 1.7, 1.3, 0.9],
+      svg: null,
+      xscale: null, // 比例
     };
   },
   computed: {},
-  created() {
-    this.scaleOrdinal();
-  },
+  created() {},
   methods: {
     init() {
       const width = 300;
       const height = 300;
-      var svg = d3.select(this.$refs.lineChart).append("svg").attr("width", width).attr("height", height);
-      var rectHeight = 25;
+      const rectHeight = 25;
+
+      this.svg = d3.select(this.$refs.lineChart).append("svg").attr("width", width).attr("height", height);
 
       // 数值过小，增加比例尺
-      const linear = d3
+      this.xscale = d3
         .scaleLinear()
         .domain([0, d3.max(this.dataset)])
         .range([0, 250]);
 
+      let axis = this.getAxis();
       //有数据，而没有足够图形元素的时候，使用此方法可以添加足够的元素。
-      svg
+      this.svg
         .selectAll("rect")
         .data(this.dataset)
         .enter()
         .append("rect")
         .attr("x", 20)
-        .attr("y", function (d, i) {
-          return i * rectHeight;
-        })
-        .attr("width", function (d) {
-          return linear(d);
-        })
+        .attr("y", (d, i) => i * rectHeight)
+        .attr("width", (d) => this.xscale(d))
         .attr("height", rectHeight - 2)
         .attr("fill", "steelblue");
+      this.svg
+        .append("g") //在 SVG 中添加坐标轴
+        .attr("class", "axis")
+        .attr("transform", `translate(20,${rectHeight * this.dataset.length})`)
+        .call(axis);
+      return this;
     },
     // 线性比例尺
     scaleLinear() {
@@ -62,6 +66,12 @@ export default {
       const ordinal = d3.scaleOrdinal().domain(index).range(color);
       console.log(ordinal(1), ordinal(3));
     },
+    // 定义坐标轴
+    getAxis() {
+      return d3
+        .axisBottom(this.xscale) //D3 中坐标轴的组件，能够在 SVG 中生成组成坐标轴的元素
+        .ticks(7); //指定刻度的数量
+    },
   },
   mounted() {
     this.init();
@@ -69,4 +79,16 @@ export default {
 };
 </script>
 
-<style scoped lang="scss"></style>
+<style lang="scss">
+.axis path,
+.axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-family: sans-serif;
+  font-size: 11px;
+}
+</style>
