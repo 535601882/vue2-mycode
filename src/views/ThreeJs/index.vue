@@ -5,7 +5,9 @@
     <div id="panorama-container"></div>
     <!--    <icon-svg name="admin" width="30px" height="30px" />
     <icon-svg name="admin-text" />-->
-    <ChinaMaps></ChinaMaps>
+    <Star></Star>
+    <ArchitectModel></ArchitectModel>
+<!--    <ChinaMaps></ChinaMaps>-->
     <template #footer>哈哈哈结尾</template>
   </PageContainer>
 </template>
@@ -13,13 +15,18 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import ChinaMaps from "./components/ChinaMaps";
+import ArchitectModel from "./components/ArchitectModel"
+import Star from "./components/Star";
 // import sphericalTexture from "@/assets/images/spherical_texture.jpg";
 // import demo1 from "./demo1";
 export default {
   name: "ThreeJs",
   props: {},
   components: {
+    // eslint-disable-next-line vue/no-unused-components
     ChinaMaps,
+    ArchitectModel,
+    Star
   },
   data() {
     return {};
@@ -41,6 +48,7 @@ export default {
     // this.autoRotate = true; // 设置自动旋转标志为 true
     // this.angle = 0; // 设置初始角度为 0
 
+    // eslint-disable-next-line no-unused-vars
     function main() {
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       document.getElementById("panorama-container").appendChild(renderer.domElement);
@@ -160,7 +168,7 @@ export default {
       requestAnimationFrame(render);
     }
 
-    main();
+    // main();
   },
   methods: {},
 };
