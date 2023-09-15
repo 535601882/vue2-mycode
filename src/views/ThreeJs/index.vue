@@ -5,9 +5,10 @@
     <div id="panorama-container"></div>
     <!--    <icon-svg name="admin" width="30px" height="30px" />
     <icon-svg name="admin-text" />-->
-    <Star></Star>
-    <ArchitectModel></ArchitectModel>
-<!--    <ChinaMaps></ChinaMaps>-->
+    <PieChar></PieChar>
+    <!--    <Star></Star>-->
+    <!--    <ArchitectModel></ArchitectModel>-->
+    <!--    <ChinaMaps></ChinaMaps>-->
     <template #footer>哈哈哈结尾</template>
   </PageContainer>
 </template>
@@ -15,8 +16,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import ChinaMaps from "./components/ChinaMaps";
-import ArchitectModel from "./components/ArchitectModel"
+import ArchitectModel from "./components/ArchitectModel";
 import Star from "./components/Star";
+import PieChar from "./components/PieChar";
 // import sphericalTexture from "@/assets/images/spherical_texture.jpg";
 // import demo1 from "./demo1";
 export default {
@@ -25,8 +27,11 @@ export default {
   components: {
     // eslint-disable-next-line vue/no-unused-components
     ChinaMaps,
+    // eslint-disable-next-line vue/no-unused-components
     ArchitectModel,
-    Star
+    // eslint-disable-next-line vue/no-unused-components
+    Star,
+    PieChar,
   },
   data() {
     return {};
