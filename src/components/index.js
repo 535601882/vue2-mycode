@@ -12,6 +12,7 @@ import PageContainer from "./PageContainer";
 import IconSvg from "./IconSvg";
 import ErrorLog from "./ErrorLog";
 import Pagination from "./Pagination";
+import FormulaEditor from "./FormulaEditor";
 // COMPONENT IMPORTS
 
 export default {
@@ -32,5 +33,6 @@ export default {
   IconSvg,
   ErrorLog,
   Pagination,
+  FormulaEditor,
   // COMPONENT EXPORTS
 };

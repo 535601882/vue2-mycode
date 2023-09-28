@@ -72,6 +72,12 @@ const routes = [
     meta: { title: "d3Demo", keepalive: true },
     component: () => import(/* webpackChunkName: "d3Demo" */ "@/views/d3Demo/index.vue"),
   },
+  {
+    path: "/visual-drag",
+    name: "visualDrag",
+    meta: { title: "visualDrag", keepalive: true },
+    component: () => import(/* webpackChunkName: "visualDrag" */ "@/views/visualDrag/index.vue"),
+  },
   // ROUTE IMPORT
   //   ],
   // },

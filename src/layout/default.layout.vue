@@ -1,12 +1,10 @@
 <template>
   <el-container class="full-height">
-    <el-aside width="200px">
-      <recursive-menu :menu-items="menus" :active-index="activeIndex" @onSelect="handleSelectMenu"></recursive-menu>
+    <el-aside :width="isCollapse ? '64px' : '200px'" style="overflow: visible">
+      <recursive-menu :menu-items="menus" :active-index="activeIndex" @onSelect="handleSelectMenu" :collapse="isCollapse"></recursive-menu>
     </el-aside>
     <el-container direction="vertical">
-      <el-header>
-        <error-log></error-log>
-      </el-header>
+      <TopNavigationBar :collapse.sync="isCollapse"></TopNavigationBar>
       <div class="main-layout">
         <tabs></tabs>
         <el-main class="position-r overflow-hidden">
@@ -19,10 +17,12 @@
 <script>
 import RecursiveMenu from "./component/RecursiveMenu.vue";
 import tabs from "./component/tabs";
+import TopNavigationBar from "./component/TopNavigationBar";
 export default {
   components: {
     RecursiveMenu,
     tabs,
+    TopNavigationBar,
   },
   data() {
     return {
@@ -129,6 +129,7 @@ export default {
         },
       ],
       activeIndex: "/",
+      isCollapse: false, // 是否折叠
     };
   },
   created() {
