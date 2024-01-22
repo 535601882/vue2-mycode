@@ -6,23 +6,50 @@
     <el-button @click="handleMargeLang">合并语言</el-button>
     <el-button @click="handleToggleLayout">切换layout</el-button>
     <hr />
-    <app-table :table="table"></app-table>
+    <app-table :table="table" :paging="paging"></app-table>
+    <hr />
+    <p>高阶组件</p>
+    <CustomInput v-model="model" placeholder="测试" ref="CustomInput">
+      <template v-slot:prefix="config">前{{ config }}</template>
+      <!-- <template v-slot:prefix>前</template> -->
+      <template v-slot:suffix>后</template>
+      <!-- <template v-slot:default="config">默认{{ config }}</template> -->
+      <template v-slot:default><div id="app1" class="app-main">默认</div></template>
+    </CustomInput>
   </PageContainer>
 </template>
 
 <script>
+import api from "@/api";
+import CustomInput from "./Hoc/CustomInput";
 export default {
   name: "Home",
-  components: {},
+  components: {
+    CustomInput,
+  },
   data() {
     return {
       table: {
+        columns: [
+          { prop: "name", label: "姓名" },
+          { prop: "birthday", label: "生日" },
+          { prop: "address", label: "地址" },
+          { prop: "date", label: "修改日期" },
+        ],
         data: [],
       },
+      paging: {
+        pageSize: 3,
+        total: null,
+        currentPage: 1,
+      },
+      model: null,
     };
   },
-  created() {
+  mounted() {
+    console.log(this.$refs.CustomInput.componentInstance);
     console.log("created", this.$i18n, this.$i18n.messages);
+    this.handleSearchClick();
   },
   methods: {
     handleClick() {
@@ -49,6 +76,17 @@ export default {
       } else {
         this.$store.dispatch("setLayout", "defaultLayout");
       }
+    },
+    // 查询
+    handleSearchClick() {
+      let obj = {
+        pageNumber: this.paging.currentPage,
+        pageSize: this.paging.pageSize,
+      };
+      api.clientApi.getUsers(obj).then((res) => {
+        this.table.data = res.result;
+        this.paging.total = res.totalCount;
+      });
     },
   },
   watch: {
