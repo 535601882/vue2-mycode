@@ -4,331 +4,7 @@
 
 <script>
 import AMapLoader from "@amap/amap-jsapi-loader";
-var districts = [
-  {
-    citycode: [],
-    adcode: "440000",
-    name: "广东",
-    center: "113.280637,23.125178",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "410000",
-    name: "河南",
-    center: "113.665412,34.757975",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "150000",
-    name: "内蒙古",
-    center: "111.670801,40.818311",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "230000",
-    name: "黑龙江",
-    center: "126.642464,45.756967",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "650000",
-    name: "新疆",
-    center: "87.617733,43.792818",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "420000",
-    name: "湖北",
-    center: "114.298572,30.584355",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "210000",
-    name: "辽宁",
-    center: "123.429096,41.796767",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "370000",
-    name: "山东",
-    center: "117.000923,36.675807",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "610000",
-    name: "陕西",
-    center: "108.948024,34.263161",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: "021",
-    adcode: "310000",
-    name: "上海",
-    center: "121.472644,31.231706",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "520000",
-    name: "贵州",
-    center: "106.713478,26.578343",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: "023",
-    adcode: "500000",
-    name: "重庆",
-    center: "106.504962,29.533155",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "540000",
-    name: "西藏",
-    center: "91.132212,29.660361",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "340000",
-    name: "安徽",
-    center: "117.283042,31.86119",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "350000",
-    name: "福建",
-    center: "119.306239,26.075302",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "430000",
-    name: "湖南",
-    center: "112.982279,28.19409",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "460000",
-    name: "海南",
-    center: "110.33119,20.031971",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "320000",
-    name: "江苏",
-    center: "118.767413,32.041544",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "630000",
-    name: "青海",
-    center: "101.778916,36.623178",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "450000",
-    name: "广西",
-    center: "108.320004,22.82402",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "640000",
-    name: "宁夏",
-    center: "106.278179,38.46637",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "360000",
-    name: "江西",
-    center: "115.892151,28.676493",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "330000",
-    name: "浙江",
-    center: "120.153576,30.287459",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "130000",
-    name: "河北",
-    center: "114.502461,38.045474",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: "1853",
-    adcode: "820000",
-    name: "澳门",
-    center: "113.54909,22.198951",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: "1886",
-    adcode: "710000",
-    name: "台湾",
-    center: "121.509062,25.044332",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: "1852",
-    adcode: "810000",
-    name: "香港",
-    center: "114.173355,22.320048",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "620000",
-    name: "甘肃",
-    center: "103.823557,36.058039",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "510000",
-    name: "四川",
-    center: "104.065735,30.659462",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "220000",
-    name: "吉林",
-    center: "125.3245,43.886841",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: "022",
-    adcode: "120000",
-    name: "天津",
-    center: "117.190182,39.125596",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "530000",
-    name: "云南",
-    center: "102.712251,25.040609",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: "010",
-    adcode: "110000",
-    name: "北京",
-    center: "116.405285,39.904989",
-    level: "province",
-    districts: [],
-  },
-  {
-    citycode: [],
-    adcode: "140000",
-    name: "山西",
-    center: "112.549248,37.857014",
-    level: "province",
-    districts: [],
-  },
-];
 
-var LabelsData = [];
-
-var directions = {
-  北京: "top",
-  河北: "right",
-  宁夏: "bottom",
-  浙江: "bottom",
-  上海: "right",
-  青海: "left",
-  黑龙江: "top",
-  江苏: "right",
-  安徽: "top",
-  重庆: "right",
-  湖南: "left",
-  澳门: "bottom",
-  香港: "right",
-  台湾: "bottom",
-  内蒙古: "top",
-};
-
-for (let i = 0; i < districts.length; i++) {
-  let config = {
-    name: "",
-    position: [116.12, 39.11],
-    zooms: [4, 13],
-    zIndex: 1,
-    opacity: 1,
-    text: {
-      content: "",
-      direction: "center",
-      offset: [0, 0],
-      zooms: [3, 20],
-      style: {
-        fontSize: 10,
-        fontWeight: "normal",
-        fillColor: "#eee",
-        strokeColor: "#88f",
-        strokeWidth: 2,
-      },
-    },
-  };
-  var district = districts[i];
-  var name = district.name;
-  config.text.content = name;
-  config.position = district.center.split(",");
-  if (directions[name]) {
-    config.text.direction = directions[name];
-  }
-  LabelsData.push(config);
-}
 export default {
   name: "index",
   data() {
@@ -336,6 +12,7 @@ export default {
       AMap: null,
       map: null,
       district: null,
+      districtSearch: null,
       currentLevel: "province",
       currentProvince: null,
       currentCity: null,
@@ -345,15 +22,59 @@ export default {
   },
   methods: {
     async initAMap() {
-      let AMap = await AMapLoader.load({
+      this.AMap = await AMapLoader.load({
         key: "0d29a3a5efa3e8e3b3b9f4043aee1287", // 申请好的Web端开发者Key，首次调用 load 时必填
         version: "2.0", // 指定要加载的 JSAPI 的版本，缺省时默认为 1.4.15
         plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.DistrictSearch"], //需要使用的的插件列表，如比例尺'AMap.Scale'，支持添加多个如：['...','...']
       });
-      this.AMap = AMap;
+      // 行政区查询服务
+      // eslint-disable-next-line no-undef
+      this.districtSearch = new this.AMap.DistrictSearch({
+        extensions: "all",
+        subdistrict: 1,
+        level: "country",
+      });
 
+      // this.districtSearch.search('中国', function(status, result) {
+      //   console.log('中国 result',status, result)
+      // });
+      //
+      // this.districtSearch.setLevel('province')
+      // this.districtSearch.search("440000", function(status, result) {
+      //   console.log('广东省 result',status, result)
+      // });
+    },
+    initMap() {
+      // 初始化地图
+      let map = new this.AMap.Map("container", {
+        zoom: 4,
+        isHotspot: false,
+        defaultCursor: "pointer",
+        // layers: [this.distCountry],
+        layers: [this.AMap.createDefaultLayer()],
+        viewMode: "2D",
+      });
+      // eslint-disable-next-line no-undef
+      this.provinceLayer = new this.AMap.LabelsLayer({
+        // 开启标注避让，默认为开启，v1.4.15 新增属性
+        collision: false,
+        // 开启标注淡入动画，默认为开启，v1.4.15 新增属性
+        animation: true,
+      });
+      this.map = map;
+      window.$map = map;
+      //加载工具条
+      map.addControl(new this.AMap.ToolBar({ liteStyle: true }));
+      map.addControl(new this.AMap.Scale());
+      this.map.on("complete", () => {
+        this.$message.success("地图加载完成！");
+        this.setProvinceName();
+      });
+    },
+    setCountryLayer() {
       // 创建国家简易行政区图层
-      this.distCountry = new AMap.DistrictLayer.Country({
+      // eslint-disable-next-line no-undef
+      this.distCountry = new this.AMap.DistrictLayer.Country({
         opacity: 0.5,
         zIndex: 10,
         SOC: "CHN", //设置显示国家
@@ -367,45 +88,65 @@ export default {
           },
         },
       });
-
-      // 初始化地图
-      let map = new AMap.Map("container", {
-        zoom: 4,
-        isHotspot: false,
-        defaultCursor: "pointer",
-        layers: [this.distCountry],
-        viewMode: "3D",
-      });
-      this.map = map;
-      window.$map = map;
-      //加载工具条
-      map.addControl(new AMap.ToolBar({ liteStyle: true }));
-      map.addControl(new AMap.Scale());
-      this.map.on("complete", () => {
-        this.$message.success("地图加载完成！");
-        this.setProvinceName();
-      });
-
+      this.map.setLayers([this.distCountry]);
       this.distCountry.on("click", (e) => {
         console.log("触发地图鼠标左键单击事件", e);
         this.handleProvinceClick(e);
       });
     },
     // 加载省名称
-    setProvinceName() {
-      // eslint-disable-next-line no-undef
-      this.provinceLayer = new AMap.LabelsLayer({
-        // 开启标注避让，默认为开启，v1.4.15 新增属性
-        collision: false,
-        // 开启标注淡入动画，默认为开启，v1.4.15 新增属性
-        animation: true,
-      });
-      for (var i = 0; i < LabelsData.length; i++) {
+    async setProvinceName() {
+      // eslint-disable-next-line no-unused-vars
+      let { districtList } = await this.getProvincesListByDistrictSearch("中国");
+      districtList = districtList[0].districtList;
+      this.setTitle(districtList);
+      this.map.add(this.provinceLayer); // 添加省份标注名
+    },
+    // 设置名称
+    setTitle(districtList) {
+      this.provinceLayer.clear(); // 先清除
+      for (var i = 0; i < districtList.length; i++) {
         // eslint-disable-next-line no-undef
-        var labelsMarker = new AMap.LabelMarker(LabelsData[i]);
+        var labelsMarker = new this.AMap.LabelMarker({
+          name: "",
+          position: [districtList[i].center.lng, districtList[i].center.lat],
+          zooms: [4, 13],
+          zIndex: 1,
+          opacity: 1,
+          text: {
+            content: districtList[i].name,
+            direction: "center",
+            offset: [0, 0],
+            zooms: [3, 20],
+            style: {
+              fontSize: 10,
+              fontWeight: "normal",
+              fillColor: "#eee",
+              strokeColor: "#88f",
+              strokeWidth: 2,
+            },
+          },
+        });
         this.provinceLayer.add(labelsMarker);
       }
-      this.map.add(this.provinceLayer);
+      this.map.add(this.provinceLayer); //再添加 todo
+    },
+    // 调用search方法查询省份列表
+    getProvincesListByDistrictSearch(keyword) {
+      keyword = typeof keyword === "number" ? keyword.toString() : keyword;
+      return new Promise((resolve, reject) => {
+        this.districtSearch.search(keyword, function (status, result) {
+          // 查询成功时status为'complete'，result为返回的查询结果
+          if (status === "complete" && result.districtList.length > 0) {
+            console.log("result", keyword, result);
+            resolve(result);
+          } else {
+            // 查询失败或其他状态
+            console.log("查询失败：" + result.info);
+            reject(result);
+          }
+        });
+      });
     },
     // 点击省区域
     // eslint-disable-next-line no-unused-vars
@@ -421,7 +162,7 @@ export default {
       if (event.props.level === "city") {
         // 如何加载地图详情 todo
         // eslint-disable-next-line no-undef
-        let tileLayer = new AMap.TileLayer({
+        let tileLayer = new this.AMap.TileLayer({
           zIndex: 10, // 图层叠加顺序，数字越小，越底层
           extData: {}, // 扩展数据，可以用于自定义图层
         });
@@ -430,28 +171,25 @@ export default {
         // 设置地图中心和缩放级别
         this.map.setZoomAndCenter(12, event.origin.lnglat); // 放大并将省份移到中心
 
-        // eslint-disable-next-line no-undef
-        new AMap.DistrictSearch({
-          extensions: "all",
-          subdistrict: 0,
-        }).search(event.props.NAME_CHN, (status, result) => {
+        // 市
+        this.districtSearch.search(event.props.NAME_CHN, (status, result) => {
           // 外多边形坐标数组和内多边形坐标数组
           var outer = [
             // eslint-disable-next-line no-undef
-            new AMap.LngLat(-360, 90, true),
+            new this.AMap.LngLat(-360, 90, true),
             // eslint-disable-next-line no-undef
-            new AMap.LngLat(-360, -90, true),
+            new this.AMap.LngLat(-360, -90, true),
             // eslint-disable-next-line no-undef
-            new AMap.LngLat(360, -90, true),
+            new this.AMap.LngLat(360, -90, true),
             // eslint-disable-next-line no-undef
-            new AMap.LngLat(360, 90, true),
+            new this.AMap.LngLat(360, 90, true),
           ];
           var holes = result.districtList[0].boundaries;
 
           var pathArray = [outer];
           pathArray.push.apply(pathArray, holes);
           // eslint-disable-next-line no-undef
-          var polygon = new AMap.Polygon({
+          var polygon = new this.AMap.Polygon({
             strokeColor: "#00eeff",
             strokeWeight: 1,
             fillColor: "#71B3ff",
@@ -462,7 +200,7 @@ export default {
 
           //创建右键菜单
           // eslint-disable-next-line no-undef
-          var contextMenu = new AMap.ContextMenu();
+          var contextMenu = new this.AMap.ContextMenu();
           //右键放大
           contextMenu.addItem(
             "返回全国",
@@ -748,8 +486,13 @@ export default {
     // 获取区
     getPoints() {},
     // 省市简易行政区图层创建及设置方法
-    setProvince(code, dep) {
+    async setProvince(code, dep) {
       this.distCountry.setMap(null);
+      this.districtSearch.setLevel("province");
+      let { districtList } = await this.getProvincesListByDistrictSearch(code);
+      console.log("districtList2", districtList, code);
+      districtList = districtList[0].districtList;
+      this.setTitle(districtList);
       // eslint-disable-next-line no-undef
       this.distCountry = new AMap.DistrictLayer.Province({
         zIndex: 12,
@@ -787,7 +530,9 @@ export default {
       obj[item.name] = item.value;
       return obj;
     }, {});
-    this.initAMap();
+    await this.initAMap();
+    this.initMap();
+    this.setCountryLayer();
   },
   unmounted() {
     this.map?.destroy();
