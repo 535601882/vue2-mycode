@@ -1,10 +1,17 @@
 <template>
-  <div id="container"></div>
+  <div>
+    <el-select v-model="form.region">
+      <el-option v-for="item in regions" :key="item.value" :label="item.label" :value="item.value"> </el-option>
+    </el-select>
+    <el-button type="primary" @click="handleSearch">查询</el-button>
+    <div id="container"></div>
+  </div>
 </template>
 
 <script>
 import AMapLoader from "@amap/amap-jsapi-loader";
 
+const keywordMap = {};
 export default {
   name: "index",
   data() {
@@ -18,7 +25,84 @@ export default {
       currentCity: null,
       provincesObj: {},
       provinceLayer: null, //省名称
+      countryDistrictLayer: null, //全国省
+      provinceDistrictLayer: null, //全国省
+      form: {
+        region: null,
+      },
+      regions: [
+        {
+          label: "零售华北大区",
+          value: "零售华北大区",
+          provinces: ["黑龙江省", "吉林省", "辽宁省", "河北省", "山西省", "北京市", "天津市"], // 大区对应的省
+          citys: [],
+          children: [
+            {
+              label: "零售黑龙江区域",
+              value: "零售黑龙江区域",
+              provinces: ["黑龙江省"], // 大区对应的省
+              citys: ["呼伦贝尔市"],
+            },
+            {
+              label: "雯售吉林区域",
+              value: "雯售吉林区域",
+              provinces: ["吉林省"], // 大区对应的省
+              citys: [],
+            },
+            {
+              label: "零售辽宁区域",
+              value: "零售辽宁区域",
+              provinces: ["辽宁省"], // 大区对应的省
+              citys: [],
+            },
+            {
+              label: "零售北京区域",
+              value: "零售北京区域",
+              provinces: ["辽宁省"], // 大区对应的省
+              citys: [],
+            },
+            {
+              label: "零售河北区域",
+              value: "零售河北区域",
+            },
+            {
+              label: "零售山西区域",
+              value: "零售山西区域",
+            },
+          ],
+        },
+        {
+          label: "零售华东大区",
+          value: "零售华东大区",
+          provinces: ["山东省", "上海市", "江苏省", "浙江省", "福建省"], // 大区对应的省
+          citys: [],
+        },
+        {
+          label: "零售华南大区",
+          value: "零售华南大区",
+          provinces: ["广东省", "广西壮族自治区", "海南省", "云南省", "贵州省"], // 大区对应的省
+          citys: [],
+        },
+        {
+          label: "零售华中大区",
+          value: "零售华中大区",
+          provinces: ["湖南省", "湖北省", "河南省", "安徽省", "江西省"], // 大区对应的省
+          citys: [],
+        },
+        {
+          label: "零售西北大区",
+          value: "零售西北大区",
+          provinces: ["陕西省", "甘肃省", "青海省", "内蒙古自治区", "宁夏回族自治区", "四川省", "重庆市"], // 大区对应的省
+          citys: [],
+        },
+      ],
     };
+  },
+  computed: {
+    // 已选中的大区
+    regionsSelect() {
+      return this.regions.find((item) => item.value === this.form.region);
+    },
   },
   methods: {
     async initAMap() {
@@ -27,22 +111,22 @@ export default {
         version: "2.0", // 指定要加载的 JSAPI 的版本，缺省时默认为 1.4.15
         plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.DistrictSearch"], //需要使用的的插件列表，如比例尺'AMap.Scale'，支持添加多个如：['...','...']
       });
-      // 行政区查询服务
-      // eslint-disable-next-line no-undef
+    },
+    // 行政区查询服务
+    initDistrictSearch() {
       this.districtSearch = new this.AMap.DistrictSearch({
         extensions: "all",
         subdistrict: 1,
         level: "country",
       });
-
-      // this.districtSearch.search('中国', function(status, result) {
-      //   console.log('中国 result',status, result)
-      // });
-      //
-      // this.districtSearch.setLevel('province')
-      // this.districtSearch.search("440000", function(status, result) {
-      //   console.log('广东省 result',status, result)
-      // });
+    },
+    initLabelsLayer() {
+      this.provinceLayer = new this.AMap.LabelsLayer({
+        // 开启标注避让，默认为开启，v1.4.15 新增属性
+        collision: false,
+        // 开启标注淡入动画，默认为开启，v1.4.15 新增属性
+        animation: true,
+      });
     },
     initMap() {
       // 初始化地图
@@ -54,13 +138,6 @@ export default {
         layers: [this.AMap.createDefaultLayer()],
         viewMode: "2D",
       });
-      // eslint-disable-next-line no-undef
-      this.provinceLayer = new this.AMap.LabelsLayer({
-        // 开启标注避让，默认为开启，v1.4.15 新增属性
-        collision: false,
-        // 开启标注淡入动画，默认为开启，v1.4.15 新增属性
-        animation: true,
-      });
       this.map = map;
       window.$map = map;
       //加载工具条
@@ -71,10 +148,9 @@ export default {
         this.setProvinceName();
       });
     },
+    // 创建国家简易行政区图层
     setCountryLayer() {
-      // 创建国家简易行政区图层
-      // eslint-disable-next-line no-undef
-      this.distCountry = new this.AMap.DistrictLayer.Country({
+      this.countryDistrictLayer = new this.AMap.DistrictLayer.Country({
         opacity: 0.5,
         zIndex: 10,
         SOC: "CHN", //设置显示国家
@@ -88,16 +164,16 @@ export default {
           },
         },
       });
-      this.map.setLayers([this.distCountry]);
-      this.distCountry.on("click", (e) => {
-        console.log("触发地图鼠标左键单击事件", e);
+      this.map.setLayers([this.countryDistrictLayer]);
+      this.countryDistrictLayer.on("click", (e) => {
+        console.log("触发全国地图鼠标左键单击事件", e);
         this.handleProvinceClick(e);
       });
     },
     // 加载省名称
     async setProvinceName() {
       // eslint-disable-next-line no-unused-vars
-      let { districtList } = await this.getProvincesListByDistrictSearch("中国");
+      let { districtList } = await this.districtSearchPromise("中国");
       districtList = districtList[0].districtList;
       this.setTitle(districtList);
       this.map.add(this.provinceLayer); // 添加省份标注名
@@ -131,25 +207,7 @@ export default {
       }
       this.map.add(this.provinceLayer); //再添加 todo
     },
-    // 调用search方法查询省份列表
-    getProvincesListByDistrictSearch(keyword) {
-      keyword = typeof keyword === "number" ? keyword.toString() : keyword;
-      return new Promise((resolve, reject) => {
-        this.districtSearch.search(keyword, function (status, result) {
-          // 查询成功时status为'complete'，result为返回的查询结果
-          if (status === "complete" && result.districtList.length > 0) {
-            console.log("result", keyword, result);
-            resolve(result);
-          } else {
-            // 查询失败或其他状态
-            console.log("查询失败：" + result.info);
-            reject(result);
-          }
-        });
-      });
-    },
-    // 点击省区域
-    // eslint-disable-next-line no-unused-vars
+    // 点击省/市区域
     async handleProvinceClick(event) {
       if (!event.props) return;
 
@@ -167,7 +225,8 @@ export default {
           extData: {}, // 扩展数据，可以用于自定义图层
         });
         this.map.add(tileLayer);
-        this.distCountry.setMap(null);
+        // this.provinceDistrictLayer.setMap(null);
+        this.provinceDistrictLayer.hide();
         // 设置地图中心和缩放级别
         this.map.setZoomAndCenter(12, event.origin.lnglat); // 放大并将省份移到中心
 
@@ -189,14 +248,14 @@ export default {
           var pathArray = [outer];
           pathArray.push.apply(pathArray, holes);
           // eslint-disable-next-line no-undef
-          var polygon = new this.AMap.Polygon({
+          this.polygon = new this.AMap.Polygon({
             strokeColor: "#00eeff",
             strokeWeight: 1,
             fillColor: "#71B3ff",
             fillOpacity: 0.5,
           });
-          polygon.setPath(pathArray);
-          this.map.add(polygon);
+          this.polygon.setPath(pathArray);
+          this.map.add(this.polygon);
 
           //创建右键菜单
           // eslint-disable-next-line no-undef
@@ -225,7 +284,7 @@ export default {
           );
 
           // 遮罩层点击
-          polygon.on("click", (e) => {
+          this.polygon.on("click", (e) => {
             console.log("遮罩单击事件", e);
             // 返回市 todo
             contextMenu.open(this.map, e.lnglat);
@@ -487,14 +546,17 @@ export default {
     getPoints() {},
     // 省市简易行政区图层创建及设置方法
     async setProvince(code, dep) {
-      this.distCountry.setMap(null);
-      this.districtSearch.setLevel("province");
-      let { districtList } = await this.getProvincesListByDistrictSearch(code);
+      // this.countryDistrictLayer.setMap(null);
+      this.countryDistrictLayer.hide();
+      this.districtSearch.setLevel("province"); // 设置为省
+      // 获取省下的市
+      let { districtList } = await this.districtSearchPromise(code);
       console.log("districtList2", districtList, code);
       districtList = districtList[0].districtList;
+      // 设置市名称
       this.setTitle(districtList);
-      // eslint-disable-next-line no-undef
-      this.distCountry = new AMap.DistrictLayer.Province({
+      // 显示指定省下的市
+      this.provinceDistrictLayer = new this.AMap.DistrictLayer.Province({
         zIndex: 12,
         adcode: [code],
         depth: dep,
@@ -514,12 +576,122 @@ export default {
         },
       });
 
-      this.distCountry.setMap(this.map);
-      this.distCountry.on("click", (e) => {
+      this.provinceDistrictLayer.setMap(this.map);
+      this.provinceDistrictLayer.on("click", (e) => {
         console.log("触发地图鼠标左键单击事件", e);
         this.handleProvinceClick(e);
       });
     },
+    handleSearch() {
+      if (!this.form.region) return;
+      //
+      // this.drawRegion()
+      // 清除页面
+      // this.distCountry.setMap(null);
+      this.toogleProvinces();
+    },
+    // 切换
+    toogleProvinces() {
+      let provinces = this.regionsSelect.provinces;
+      // 设置 adcodes 值
+      this.countryDistrictLayer.setDistricts(provinces.map((province) => getProvinceAdcode(province)));
+      function getProvinceAdcode(provinceName) {
+        let adcodeMapping = {
+          北京市: 110000,
+          天津市: 120000,
+          河北省: 130000,
+          山西省: 140000,
+          内蒙古自治区: 150000,
+          辽宁省: 210000,
+          吉林省: 220000,
+          黑龙江省: 230000,
+          上海市: 310000,
+          江苏省: 320000,
+          浙江省: 330000,
+          安徽省: 340000,
+          福建省: 350000,
+          江西省: 360000,
+          山东省: 370000,
+          河南省: 410000,
+          湖北省: 420000,
+          湖南省: 430000,
+          广东省: 440000,
+          广西壮族自治区: 450000,
+          海南省: 460000,
+          重庆市: 500000,
+          四川省: 510000,
+          贵州省: 520000,
+          云南省: 530000,
+          西藏自治区: 540000,
+          陕西省: 610000,
+          甘肃省: 620000,
+          青海省: 630000,
+          宁夏回族自治区: 640000,
+          新疆维吾尔自治区: 650000,
+        };
+        return adcodeMapping[provinceName];
+      }
+    },
+    // 利用Polygon镂空 绘制大区（卡顿）
+    async drawRegion() {
+      // 需要移除多边形时
+      if (this.polygon) {
+        this.map.remove(this.polygon);
+        this.polygon = null; // 清除引用
+      }
+      // 外多边形坐标数组和内多边形坐标数组
+      // 外多边形坐标数组和内多边形坐标数组
+      var outer = [
+        new this.AMap.LngLat(-360, 90, true),
+        new this.AMap.LngLat(-360, -90, true),
+        new this.AMap.LngLat(360, -90, true),
+        new this.AMap.LngLat(360, 90, true),
+      ];
+      var holes = [];
+      // 查省/直辖市
+      this.districtSearch.setLevel("province");
+      const provinces = this.regionsSelect.provinces;
+      for (let city of provinces) {
+        let result = await this.districtSearchPromise(city);
+        if (result.districtList[0].boundaries) {
+          holes.push(...result.districtList[0].boundaries);
+        }
+      }
+
+      var pathArray = [outer];
+      pathArray.push.apply(pathArray, holes);
+      console.log("pathArray", pathArray);
+
+      this.polygon = new this.AMap.Polygon({
+        strokeColor: "#00eeff",
+        strokeWeight: 1,
+        fillColor: "#71B3ff",
+        fillOpacity: 0.5,
+      });
+
+      this.polygon.setPath(pathArray);
+      this.map.add(this.polygon);
+      this.map.setFitView(this.polygon);
+    },
+    // districtSearch查询
+    districtSearchPromise(keyword) {
+      keyword = typeof keyword === "number" ? keyword.toString() : keyword;
+      return new Promise((resolve, reject) => {
+        if (keywordMap[keyword]) return resolve(keywordMap[keyword]);
+        this.districtSearch.search(keyword, (status, result) => {
+          if (status === "complete" && result.info === "OK") {
+            console.log("获取完成", keyword);
+            console.time();
+            keywordMap[keyword] = result;
+            resolve(result);
+          } else {
+            reject(new Error(`Failed to search ${keyword}`));
+          }
+        });
+      });
+    },
+    // 先查询大区的数据
+    getRegionData() {},
   },
   async mounted() {
     window._AMapSecurityConfig = {
@@ -531,6 +703,8 @@ export default {
       return obj;
     }, {});
     await this.initAMap();
+    this.initDistrictSearch();
+    this.initLabelsLayer();
     this.initMap();
     this.setCountryLayer();
   },
