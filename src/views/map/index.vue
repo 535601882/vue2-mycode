@@ -1,7 +1,10 @@
 <template>
   <div>
-    <el-select v-model="form.region">
+    <el-select v-model="form.region" clearable>
       <el-option v-for="item in regions" :key="item.value" :label="item.label" :value="item.value"> </el-option>
+    </el-select>
+    <el-select v-model="form.area" clearable>
+      <el-option v-for="item in regionsSelect.children" :key="item.value" :label="item.label" :value="item.value"> </el-option>
     </el-select>
     <el-button type="primary" @click="handleSearch">查询</el-button>
     <div id="container"></div>
@@ -11,24 +14,69 @@
 <script>
 import AMapLoader from "@amap/amap-jsapi-loader";
 
+function getProvinceAdcode(provinceName) {
+  let adcodeMapping = tansformProvinceData(provinceData);
+  console.log("adcodeMapping", adcodeMapping);
+  return adcodeMapping[provinceName];
+}
 const keywordMap = {};
+let provinceData = []; // 省
+// eslint-disable-next-line no-unused-vars
+let cityData = []; // 市
+
+// 用于存储图层的堆栈
+let layerStack = [];
+
+// 切换到下一个图层并记录当前图层
+function pushLayer(nextLayer) {
+  let currentLayer = layerStack[layerStack.length - 1];
+  currentLayer.hide();
+  nextLayer.show();
+  layerStack.push(nextLayer);
+}
+
+// 返回到上一个图层
+function popLayer() {
+  if (layerStack.length > 1) {
+    let currentLayer = layerStack.pop();
+    currentLayer.hide();
+    let previousLayer = layerStack[layerStack.length - 1];
+    previousLayer.show();
+  }
+}
+
+// 將地图的省市=>adcode转换
+function tansformProvinceData(provinceData) {
+  let obj = {};
+  let trans = function (data) {
+    for (let item of data) {
+      obj[item.name] = item.adcode;
+      if (item.districtList && item.districtList.length) {
+        trans(item.districtList);
+      }
+    }
+  };
+  trans(provinceData);
+  return obj;
+}
+
 export default {
   name: "index",
   data() {
     return {
       AMap: null,
       map: null,
-      district: null,
-      districtSearch: null,
-      currentLevel: "province",
-      currentProvince: null,
-      currentCity: null,
+      districtSearch: null, //行政区查询服务
       provincesObj: {},
-      provinceLayer: null, //省名称
-      countryDistrictLayer: null, //全国省
-      provinceDistrictLayer: null, //全国省
+      defaultLayer: null, //默认标准图层 layer
+      disCountry: null, //省地图 layer
+      layerProvince: null, //省名称 layer
+      disLabelMarker: null, //省名称 marker
+      disProvince: null, //市地图 layer
+      layerCity: null, //市名称 layer
       form: {
         region: null,
+        area: null,
       },
       regions: [
         {
@@ -40,34 +88,32 @@ export default {
             {
               label: "零售黑龙江区域",
               value: "零售黑龙江区域",
-              provinces: ["黑龙江省"], // 大区对应的省
-              citys: ["呼伦贝尔市"],
+              provinces: ["黑龙江省", "呼伦贝尔市"],
             },
             {
               label: "雯售吉林区域",
               value: "雯售吉林区域",
               provinces: ["吉林省"], // 大区对应的省
-              citys: [],
             },
             {
               label: "零售辽宁区域",
               value: "零售辽宁区域",
               provinces: ["辽宁省"], // 大区对应的省
-              citys: [],
             },
             {
               label: "零售北京区域",
               value: "零售北京区域",
-              provinces: ["辽宁省"], // 大区对应的省
-              citys: [],
+              provinces: ["北京市", "天津市", "张家口市", "廊坊市", "承德市", "唐山市", "秦皇岛市"], // 大区对应的省
             },
             {
               label: "零售河北区域",
               value: "零售河北区域",
+              provinces: ["保定市", "石家庄市", "沧州市", "邢台市", "衡水市", "邯郸市"],
             },
             {
               label: "零售山西区域",
               value: "零售山西区域",
+              provinces: ["山西省"],
             },
           ],
         },
@@ -76,24 +122,28 @@ export default {
           value: "零售华东大区",
           provinces: ["山东省", "上海市", "江苏省", "浙江省", "福建省"], // 大区对应的省
           citys: [],
+          children: [],
         },
         {
           label: "零售华南大区",
           value: "零售华南大区",
           provinces: ["广东省", "广西壮族自治区", "海南省", "云南省", "贵州省"], // 大区对应的省
           citys: [],
+          children: [],
         },
         {
           label: "零售华中大区",
           value: "零售华中大区",
           provinces: ["湖南省", "湖北省", "河南省", "安徽省", "江西省"], // 大区对应的省
           citys: [],
+          children: [],
         },
         {
           label: "零售西北大区",
           value: "零售西北大区",
           provinces: ["陕西省", "甘肃省", "青海省", "内蒙古自治区", "宁夏回族自治区", "四川省", "重庆市"], // 大区对应的省
           citys: [],
+          children: [],
         },
       ],
     };
@@ -101,7 +151,17 @@ export default {
   computed: {
     // 已选中的大区
     regionsSelect() {
+      if (!this.form.region) {
+        return {
+          provinces: [],
+          children: [],
+        };
+      }
       return this.regions.find((item) => item.value === this.form.region);
+    },
+    areaSelect() {
+      if (!this.form.area) return;
+      return this.regionsSelect.children.find((item) => item.value === this.form.area).provinces;
     },
   },
   methods: {
@@ -109,197 +169,279 @@ export default {
       this.AMap = await AMapLoader.load({
         key: "0d29a3a5efa3e8e3b3b9f4043aee1287", // 申请好的Web端开发者Key，首次调用 load 时必填
         version: "2.0", // 指定要加载的 JSAPI 的版本，缺省时默认为 1.4.15
-        plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.DistrictSearch"], //需要使用的的插件列表，如比例尺'AMap.Scale'，支持添加多个如：['...','...']
+        plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.DistrictSearch", "AMap.ControlBar"], //需要使用的的插件列表，如比例尺'AMap.Scale'，支持添加多个如：['...','...']
       });
     },
     // 行政区查询服务
-    initDistrictSearch() {
+    async initDistrictSearch() {
       this.districtSearch = new this.AMap.DistrictSearch({
         extensions: "all",
-        subdistrict: 1,
+        subdistrict: 2,
         level: "country",
       });
+      let { districtList } = await this.districtSearchPromise("中国");
+      provinceData = districtList[0].districtList;
+      console.log("provinceData", provinceData);
     },
-    initLabelsLayer() {
-      this.provinceLayer = new this.AMap.LabelsLayer({
+    // 省名称 layer
+    initLayerProvince() {
+      // LabelsLayer 图层是用于承载 LabelMarker 标记的图层
+      this.layerProvince = new this.AMap.LabelsLayer({
         // 开启标注避让，默认为开启，v1.4.15 新增属性
         collision: false,
         // 开启标注淡入动画，默认为开启，v1.4.15 新增属性
         animation: true,
       });
     },
-    initMap() {
-      // 初始化地图
-      let map = new this.AMap.Map("container", {
-        zoom: 4,
-        isHotspot: false,
-        defaultCursor: "pointer",
-        // layers: [this.distCountry],
-        layers: [this.AMap.createDefaultLayer()],
-        viewMode: "2D",
-      });
-      this.map = map;
-      window.$map = map;
-      //加载工具条
-      map.addControl(new this.AMap.ToolBar({ liteStyle: true }));
-      map.addControl(new this.AMap.Scale());
-      this.map.on("complete", () => {
-        this.$message.success("地图加载完成！");
-        this.setProvinceName();
+    // 获取LabelMarkers
+    getLabelMarkers(newMarkers) {
+      return newMarkers.map((marker) => {
+        return new this.AMap.LabelMarker({
+          name: marker.name,
+          position: [marker.center.lng, marker.center.lat],
+          zooms: [4, 13],
+          zIndex: 1,
+          opacity: 1,
+          text: {
+            content: marker.name,
+            direction: "center",
+            offset: [0, 0],
+            zooms: [3, 20],
+            style: {
+              fontSize: 12,
+              fontWeight: "normal",
+              fillColor: "#88f",
+              strokeColor: "#fff",
+              strokeWidth: 2,
+            },
+          },
+        });
       });
     },
-    // 创建国家简易行政区图层
-    setCountryLayer() {
-      this.countryDistrictLayer = new this.AMap.DistrictLayer.Country({
+    // 市名称 layer
+    initLayerCity() {
+      this.layerCity = new this.AMap.LabelsLayer({
+        // 开启标注避让，默认为开启，v1.4.15 新增属性
+        collision: false,
+        // 开启标注淡入动画，默认为开启，v1.4.15 新增属性
+        animation: true,
+      });
+    },
+    // 省Layer图层
+    initDisCountry(options) {
+      if (this.disCountry) {
+        this.map.remove(this.disCountry);
+        // this.disProvince = null
+      }
+      let config = {
         opacity: 0.5,
         zIndex: 10,
         SOC: "CHN", //设置显示国家
         depth: 1, //设置数据显示层级，0：显示国家面，1：显示省级，当国家为中国时设置depth为2的可以显示市一级
         styles: {
-          "nation-stroke": "#ff0000",
-          "coastline-stroke": "#0088ff",
-          "province-stroke": "grey",
+          "stroke-width": 1.5,
+          "nation-stroke": "#ff0000", //国境线颜色
+          "coastline-stroke": "#0088ff", //海岸线颜色
+          "province-stroke": "#fff", //省界颜色
           fill: (props) => {
             return this.getFillColor(this.provincesObj[props.NAME_CHN]);
           },
         },
+      };
+      if (options) {
+        config = { ...config, ...options };
+      }
+      this.disCountry = new this.AMap.DistrictLayer.Country(config);
+      this.map.add(this.disCountry);
+    },
+    // 市Layer图层  简易行政区图-省区
+    initProvince() {
+      if (this.disProvince) {
+        this.map.remove(this.disProvince);
+        // this.disProvince = null
+      }
+      this.disProvince = new this.AMap.DistrictLayer.Province({
+        zIndex: 12,
+        adcode: "", // 未指定特定adcode，显示所有省级区域
+        depth: 1,
+        styles: {
+          fill: (properties) => {
+            // properties为可用于做样式映射的字段，包含
+            // NAME_CHN:中文名称
+            // adcode_pro
+            // adcode_cit
+            // adcode
+            var adcode = properties.adcode;
+            return this.getFillColor(adcode);
+          },
+          "stroke-width": 1.5,
+          "province-stroke": "cornflowerblue",
+          "city-stroke": "#fff", // 中国地级市边界
+          "county-stroke": "rgba(255,255,255,0.5)", // 中国区县边界
+        },
       });
-      this.map.setLayers([this.countryDistrictLayer]);
-      this.countryDistrictLayer.on("click", (e) => {
-        console.log("触发全国地图鼠标左键单击事件", e);
-        this.handleProvinceClick(e);
+      this.map.add(this.disProvince);
+    },
+    // 默认标准图层
+    initCreateDefaultLayer() {
+      this.defaultLayer = this.AMap.createDefaultLayer();
+    },
+    initMap() {
+      return new Promise((resolve) => {
+        // 初始化地图
+        let map = new this.AMap.Map("container", {
+          zoom: 4,
+          center: [106.122082, 33.719192],
+          isHotspot: false, // 是否开启地图热点和标注的 hover 效果
+          defaultCursor: "pointer",
+          layers: [this.defaultLayer],
+          // layers: [this.AMap.createDefaultLayer()],
+          viewMode: "3D",
+          resizeEnable: true,
+        });
+        this.map = map;
+        window.$map = map;
+        //加载工具条
+        map.addControl(new this.AMap.ToolBar({ liteStyle: true }));
+        map.addControl(new this.AMap.Scale());
+        this.map.on("complete", () => {
+          resolve();
+          this.$message.success("地图加载完成！");
+
+          this.setProvinceName(provinceData);
+          // this.map.add(this.layerProvince); //再添加
+        });
       });
     },
     // 加载省名称
-    async setProvinceName() {
-      // eslint-disable-next-line no-unused-vars
-      let { districtList } = await this.districtSearchPromise("中国");
-      districtList = districtList[0].districtList;
-      this.setTitle(districtList);
-      this.map.add(this.provinceLayer); // 添加省份标注名
+    async setProvinceName(provinceData) {
+      this.disLabelMarker && this.layerProvince.remove(this.disLabelMarker); // 先移除
+      this.disLabelMarker = this.getLabelMarkers(provinceData);
+      // 将 LabelMarker 标记添加到 LabelsLayer 图层上
+      this.layerProvince.add(this.disLabelMarker);
+      return this.layerProvince;
     },
-    // 设置名称
-    setTitle(districtList) {
-      this.provinceLayer.clear(); // 先清除
-      for (var i = 0; i < districtList.length; i++) {
-        // eslint-disable-next-line no-undef
-        var labelsMarker = new this.AMap.LabelMarker({
-          name: "",
-          position: [districtList[i].center.lng, districtList[i].center.lat],
-          zooms: [4, 13],
-          zIndex: 1,
-          opacity: 1,
-          text: {
-            content: districtList[i].name,
-            direction: "center",
-            offset: [0, 0],
-            zooms: [3, 20],
-            style: {
-              fontSize: 10,
-              fontWeight: "normal",
-              fillColor: "#eee",
-              strokeColor: "#88f",
-              strokeWidth: 2,
-            },
-          },
-        });
-        this.provinceLayer.add(labelsMarker);
-      }
-      this.map.add(this.provinceLayer); //再添加 todo
-    },
-    // 点击省/市区域
+    // 点击省区域
     async handleProvinceClick(event) {
       if (!event.props) return;
-
       if (event.props.level === "province") {
-        this.map.remove(this.provinceLayer); // 移除省
-        this.setProvince(event.props.adcode, 1);
+        pushLayer(this.disProvince);
+        // this.map.remove(this.layerProvince); // 移除省
+        // this.setProvince(event.props.adcode, 1);
+        this.layerProvince.hide(); // 隐藏省名称
+        // this.disCountry.hide();// 隐藏省
+        // this.disProvince.show()// 展示市
+        this.disProvince.setDistricts(event.props.adcode + ""); // 显示当前点击的省份
+        // this.setProvince(event.props.adcode, 1);
         // 设置地图中心和缩放级别
         this.map.setZoomAndCenter(7, event.origin.lnglat); // 放大并将省份移到中心
+
+        // 获取当前点击省份下的市级数据
+        cityData = this.getCitysForProvince(event.props.NAME_CHN);
+        console.log("cityData", cityData);
+        for (let i = 0; i < cityData.length; i++) {
+          var city = cityData[i];
+          var marker = new this.AMap.LabelMarker({
+            name: city.name,
+            position: [city.center.lng, city.center.lat],
+            zIndex: 10,
+            text: {
+              content: city.name,
+              direction: "center",
+              style: {
+                fontSize: 10,
+                fontWeight: "normal",
+                fillColor: "#fff",
+                backgroundColor: "rgb(246,137,38)",
+                borderColor: "#fff",
+              },
+            },
+          });
+          this.layerCity.add(marker);
+        }
+        this.map.add(this.layerCity);
       }
+    },
+    // 获取指定省下的市
+    getCitysForProvince(name) {
+      return provinceData.find((item) => item.name === name).districtList;
+    },
+    // 点击市区域
+    async handleCityClick(event) {
+      if (!event.props) return;
       if (event.props.level === "city") {
+        pushLayer(this.defaultLayer);
+        this.layerCity.hide(); // 隐藏市标题
+        // this.disProvince.hide();// 隐藏市图层
+        // this.defaultLayer.show()
+        this.districtSearch.setLevel("province"); // 设置为省
         // 如何加载地图详情 todo
-        // eslint-disable-next-line no-undef
-        let tileLayer = new this.AMap.TileLayer({
-          zIndex: 10, // 图层叠加顺序，数字越小，越底层
-          extData: {}, // 扩展数据，可以用于自定义图层
-        });
-        this.map.add(tileLayer);
-        // this.provinceDistrictLayer.setMap(null);
-        this.provinceDistrictLayer.hide();
+        // let tileLayer = new this.AMap.TileLayer({
+        //   zIndex: 10, // 图层叠加顺序，数字越小，越底层
+        //   extData: {}, // 扩展数据，可以用于自定义图层
+        // });
+        // this.map.add(tileLayer);
+        // this.disProvince.setMap(null);
         // 设置地图中心和缩放级别
         this.map.setZoomAndCenter(12, event.origin.lnglat); // 放大并将省份移到中心
 
-        // 市
-        this.districtSearch.search(event.props.NAME_CHN, (status, result) => {
-          // 外多边形坐标数组和内多边形坐标数组
-          var outer = [
-            // eslint-disable-next-line no-undef
-            new this.AMap.LngLat(-360, 90, true),
-            // eslint-disable-next-line no-undef
-            new this.AMap.LngLat(-360, -90, true),
-            // eslint-disable-next-line no-undef
-            new this.AMap.LngLat(360, -90, true),
-            // eslint-disable-next-line no-undef
-            new this.AMap.LngLat(360, 90, true),
-          ];
-          var holes = result.districtList[0].boundaries;
-
-          var pathArray = [outer];
-          pathArray.push.apply(pathArray, holes);
+        // 获取市轮廓
+        let result = await this.districtSearchPromise(event.props.NAME_CHN);
+        // 外多边形坐标数组和内多边形坐标数组
+        var outer = [
           // eslint-disable-next-line no-undef
-          this.polygon = new this.AMap.Polygon({
-            strokeColor: "#00eeff",
-            strokeWeight: 1,
-            fillColor: "#71B3ff",
-            fillOpacity: 0.5,
-          });
-          this.polygon.setPath(pathArray);
-          this.map.add(this.polygon);
-
-          //创建右键菜单
+          new this.AMap.LngLat(-360, 90, true),
           // eslint-disable-next-line no-undef
-          var contextMenu = new this.AMap.ContextMenu();
-          //右键放大
-          contextMenu.addItem(
-            "返回全国",
-            function (e) {
-              console.log(e);
-            },
-            0
-          );
-          contextMenu.addItem(
-            "返回省",
-            function (e) {
-              console.log(e);
-            },
-            1
-          );
-          contextMenu.addItem(
-            "返回市",
-            function (e) {
-              console.log(e);
-            },
-            1
-          );
+          new this.AMap.LngLat(-360, -90, true),
+          // eslint-disable-next-line no-undef
+          new this.AMap.LngLat(360, -90, true),
+          // eslint-disable-next-line no-undef
+          new this.AMap.LngLat(360, 90, true),
+        ];
+        var holes = result.districtList[0].boundaries;
 
-          // 遮罩层点击
-          this.polygon.on("click", (e) => {
-            console.log("遮罩单击事件", e);
-            // 返回市 todo
-            contextMenu.open(this.map, e.lnglat);
-          });
+        var pathArray = [outer];
+        pathArray.push.apply(pathArray, holes);
+        // eslint-disable-next-line no-undef
+        this.polygon = new this.AMap.Polygon({
+          strokeColor: "#00eeff",
+          strokeWeight: 1,
+          fillColor: "#71B3ff",
+          fillOpacity: 0.5,
         });
-      }
-    },
-    // 点击市区域
-    handleCityClick(event) {
-      if (this.currentLevel === "city") {
-        const city = event.target.getExtData();
-        this.currentCity = city.name;
-        this.map.setZoomAndCenter(10, event.lnglat);
-        this.loadPoints(city.name);
-        this.currentLevel = "point";
+        this.polygon.setPath(pathArray);
+        this.map.add(this.polygon);
+
+        //创建右键菜单
+        // eslint-disable-next-line no-undef
+        var contextMenu = new this.AMap.ContextMenu();
+        //右键放大
+        contextMenu.addItem(
+          "返回全国",
+          (e) => {
+            console.log(e);
+            popLayer();
+            popLayer();
+            this.map.remove(this.polygon);
+          },
+          0
+        );
+        contextMenu.addItem(
+          "返回省",
+          (e) => {
+            console.log(e);
+            popLayer();
+            this.map.remove(this.polygon);
+          },
+          1
+        );
+
+        // 遮罩层点击
+        this.polygon.on("click", (e) => {
+          console.log("遮罩单击事件", e);
+          // 返回市 todo
+          contextMenu.open(this.map, e.lnglat);
+        });
       }
     },
     loadPoints(cityName) {
@@ -364,190 +506,12 @@ export default {
         { name: "澳门特别行政区", value: 78 },
       ]);
     },
-    // 获取市
-    getCities(provinceName) {
-      // 示例省份和对应市的数据结构
-      const provincesData = {
-        北京市: [
-          "东城区",
-          "西城区",
-          "朝阳区",
-          "丰台区",
-          "石景山区",
-          "海淀区",
-          "门头沟区",
-          "房山区",
-          "通州区",
-          "顺义区",
-          "昌平区",
-          "大兴区",
-          "怀柔区",
-          "平谷区",
-          "密云区",
-          "延庆区",
-        ],
-        上海市: [],
-        天津市: [],
-        重庆市: [],
-        河北省: [],
-        山西省: ["忻州市", "晋中市", "太原市", "朔州市", "阳泉市", "长治市", "晋城市", "临汾市", "运城市"],
-        辽宁省: [],
-        吉林省: [],
-        黑龙江省: [],
-        江苏省: [],
-        浙江省: [],
-        安徽省: [],
-        福建省: ["福州市", "厦门市", "莆田市", "三明市", "泉州市", "漳州市", "南平市", "龙岩市", "宁德市"],
-        江西省: ["南昌市", "景德镇市", "萍乡市", "九江市", "宜春市", "赣州市", "上饶市", "抚州市", "宿州市", "吉安市", "鹰潭市", "瑞昌市", "高安市"],
-        山东省: [
-          "济南市",
-          "青岛市",
-          "淄博市",
-          "枣庄市",
-          "东营市",
-          "烟台市",
-          "潍坊市",
-          "济宁市",
-          "泰安市",
-          "威海市",
-          "日照市",
-          "临沂市",
-          "德州市",
-          "聊城市",
-          "滨州市",
-          "菏泽市",
-        ],
-        河南省: [
-          "郑州市",
-          "开封市",
-          "洛阳市",
-          "平顶山市",
-          "安阳市",
-          "鹤壁市",
-          "新乡市",
-          "焦作市",
-          "濮阳市",
-          "许昌市",
-          "漯河市",
-          "三门峡市",
-          "南阳市",
-          "商丘市",
-          "信阳市",
-          "周口市",
-          "驻马店市",
-        ],
-        湖北省: ["十堰市", "荆州市", "襄阳市", "鄂州市", "孝感市", "荆门市", "黄石市", "咸宁市", "随州市", "恩施土家族苗族自治州"],
-        湖南省: ["长沙市", "株洲市", "湘潭市", "衡阳市", "邵阳市", "岳阳市", "常德市", "张家界市", "益阳市", "郴州市", "永州市", "怀化市"],
-        广东省: [
-          "广州市",
-          "深圳市",
-          "珠海市",
-          "汕头市",
-          "佛山市",
-          "江门市",
-          "湛江市",
-          "茂名市",
-          "肇庆市",
-          "惠州市",
-          "梅州市",
-          "汕尾市",
-          "河源市",
-          "阳江市",
-          "清远市",
-          "东莞市",
-          "中山市",
-          "潮州市",
-          "揭阳市",
-          "云浮市",
-        ],
-        海南省: [],
-        四川省: [
-          "成都市",
-          "自贡市",
-          "攀枝花市",
-          "泸定县",
-          "德阳市",
-          "绵阳市",
-          "广元市",
-          "遂宁市",
-          "内江市",
-          "乐山市",
-          "自贡市",
-          "宜宾市",
-          "眉山市",
-          "资阳市",
-          "亚东县",
-          "金堂县",
-          "剑阁县",
-          "五通桥市",
-          "黎川县",
-          "遂宁市",
-          "射洪县",
-          "大英县",
-          "邛崃市",
-          "彭山县",
-          "长寿县",
-          "中江县",
-          "越西县",
-          "仁寿县",
-          "彭山县",
-          "东兴区",
-          "西昌市",
-          "木里藏族羌族自治县",
-          "盐边县",
-          "昭觉县",
-          "金阳县",
-          "雷波县",
-          "美姑藏族侗族自治县",
-          "布拖藏族佤族苗族自治县",
-          "光辉县",
-          "喜德县",
-          "冕宁县",
-          "甘洛县",
-          "石棠县",
-          "稻城县",
-          "得荣县",
-        ],
-        贵州省: [],
-        云南省: [],
-        陕西省: [],
-        甘肃省: [],
-        青海省: [],
-        台湾省: [],
-        内蒙古自治区: [],
-        广西壮族自治区: [],
-        西藏自治区: [],
-        宁夏回族自治区: [],
-        新疆维吾尔自治区: [],
-        香港特别行政区: [],
-        澳门特别行政区: [],
-      };
-
-      // 检查输入的省份是否存在于数据中
-      // eslint-disable-next-line no-prototype-builtins
-      if (!provincesData.hasOwnProperty(provinceName)) {
-        console.error(`省份 "${provinceName}" 不存在.`);
-        return null;
-      }
-
-      // 获取指定省份下的所有市
-      const cities = provincesData[provinceName];
-
-      // 为每个市生成随机value并构建最终数据结构
-      const citiesWithValues = cities.map((city) => ({
-        name: city,
-        value: Math.floor(Math.random() * (100 - 30 + 1)) + 30, // 生成30到100之间的随机数
-      }));
-
-      console.log("citiesWithValues", provinceName, citiesWithValues);
-      return Promise.resolve(citiesWithValues);
-    },
     // 获取区
     getPoints() {},
     // 省市简易行政区图层创建及设置方法
     async setProvince(code, dep) {
-      // this.countryDistrictLayer.setMap(null);
-      this.countryDistrictLayer.hide();
+      // this.disCountry.setMap(null);
+      this.disCountry.hide();
       this.districtSearch.setLevel("province"); // 设置为省
       // 获取省下的市
       let { districtList } = await this.districtSearchPromise(code);
@@ -556,7 +520,7 @@ export default {
       // 设置市名称
       this.setTitle(districtList);
       // 显示指定省下的市
-      this.provinceDistrictLayer = new this.AMap.DistrictLayer.Province({
+      this.disProvince = new this.AMap.DistrictLayer.Province({
         zIndex: 12,
         adcode: [code],
         depth: dep,
@@ -576,61 +540,47 @@ export default {
         },
       });
 
-      this.provinceDistrictLayer.setMap(this.map);
-      this.provinceDistrictLayer.on("click", (e) => {
+      this.disProvince.setMap(this.map);
+      this.disProvince.on("click", (e) => {
         console.log("触发地图鼠标左键单击事件", e);
         this.handleProvinceClick(e);
       });
     },
     handleSearch() {
-      if (!this.form.region) return;
-      //
-      // this.drawRegion()
-      // 清除页面
-      // this.distCountry.setMap(null);
-      this.toogleProvinces();
+      if (!this.form.region) {
+        // 重置地图
+        this.setProvinceName(provinceData);
+        // todo 重新渲染全国地图
+        this.disCountry.setDistricts("");
+        return;
+      } else if (this.form.area) {
+        // 重新设置depth层级为2
+        this.initDisCountry({
+          depth: 2,
+          adcode: this.areaSelect.map((province) => getProvinceAdcode(province)),
+        });
+        //
+        // this.disCountry.setDistricts(this.areaSelect.map((province) => getProvinceAdcode(province)));
+      } else if (this.form.region) {
+        //
+        // this.drawRegion()
+        // 清除页面
+        // this.distCountry.setMap(null);
+        this.toogleProvinces();
+      }
     },
     // 切换
     toogleProvinces() {
       let provinces = this.regionsSelect.provinces;
       // 设置 adcodes 值
-      this.countryDistrictLayer.setDistricts(provinces.map((province) => getProvinceAdcode(province)));
-      function getProvinceAdcode(provinceName) {
-        let adcodeMapping = {
-          北京市: 110000,
-          天津市: 120000,
-          河北省: 130000,
-          山西省: 140000,
-          内蒙古自治区: 150000,
-          辽宁省: 210000,
-          吉林省: 220000,
-          黑龙江省: 230000,
-          上海市: 310000,
-          江苏省: 320000,
-          浙江省: 330000,
-          安徽省: 340000,
-          福建省: 350000,
-          江西省: 360000,
-          山东省: 370000,
-          河南省: 410000,
-          湖北省: 420000,
-          湖南省: 430000,
-          广东省: 440000,
-          广西壮族自治区: 450000,
-          海南省: 460000,
-          重庆市: 500000,
-          四川省: 510000,
-          贵州省: 520000,
-          云南省: 530000,
-          西藏自治区: 540000,
-          陕西省: 610000,
-          甘肃省: 620000,
-          青海省: 630000,
-          宁夏回族自治区: 640000,
-          新疆维吾尔自治区: 650000,
-        };
-        return adcodeMapping[provinceName];
-      }
+      this.disCountry.setDistricts(provinces.map((province) => getProvinceAdcode(province)));
+      this.layerProvince.show(); //省名称展示
+      this.disCountry.show(); // 省展示
+      this.disProvince.hide(); // 市隐藏
+      this.layerCity.hide(); //市名称隐藏
+      let data = provinceData.filter((item) => provinces.includes(item.name));
+      console.log("provinces", provinces, provinceData, data);
+      this.setProvinceName(data);
     },
     // 利用Polygon镂空 绘制大区（卡顿）
     async drawRegion() {
@@ -680,8 +630,7 @@ export default {
         if (keywordMap[keyword]) return resolve(keywordMap[keyword]);
         this.districtSearch.search(keyword, (status, result) => {
           if (status === "complete" && result.info === "OK") {
-            console.log("获取完成", keyword);
-            console.time();
+            console.log("获取完成", keyword, result);
             keywordMap[keyword] = result;
             resolve(result);
           } else {
@@ -703,10 +652,27 @@ export default {
       return obj;
     }, {});
     await this.initAMap();
-    this.initDistrictSearch();
-    this.initLabelsLayer();
-    this.initMap();
-    this.setCountryLayer();
+    await this.initDistrictSearch();
+    this.initLayerProvince();
+    this.initLayerCity();
+    this.initCreateDefaultLayer();
+    await this.initMap();
+    this.initDisCountry();
+    layerStack.push(this.disCountry);
+    this.initProvince();
+
+    this.disCountry.on("click", (e) => {
+      console.log("省点击", e);
+      this.handleProvinceClick(e);
+    });
+
+    this.disProvince.on("click", (e) => {
+      console.log("市点击", e);
+      this.handleCityClick(e);
+    });
+    this.map.add(this.layerProvince); //再添加
+    this.defaultLayer.hide(); // 先把标准地图隱藏
+    this.disProvince.hide(); // 先把市隱藏
   },
   unmounted() {
     this.map?.destroy();
