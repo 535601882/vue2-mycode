@@ -13,12 +13,44 @@
 
 <script>
 import AMapLoader from "@amap/amap-jsapi-loader";
+// eslint-disable-next-line no-unused-vars
+class LayerManager {
+  constructor(map) {
+    this.map = map;
+    this.layers = {};
+  }
 
-function getProvinceAdcode(provinceName) {
-  let adcodeMapping = tansformProvinceData(provinceData);
-  console.log("adcodeMapping", adcodeMapping);
-  return adcodeMapping[provinceName];
+  addLayer(name, layer) {
+    if (!this.layers[name]) {
+      this.layers[name] = layer;
+      this.map.add(layer);
+    }
+  }
+
+  removeLayer(name) {
+    if (this.layers[name]) {
+      this.map.remove(this.layers[name]);
+      delete this.layers[name];
+    }
+  }
+
+  getLayer(name) {
+    return this.layers[name];
+  }
+
+  addAllLayers() {
+    for (let name in this.layers) {
+      this.map.add(this.layers[name]);
+    }
+  }
+
+  removeAllLayers() {
+    for (let name in this.layers) {
+      this.map.remove(this.layers[name]);
+    }
+  }
 }
+
 const keywordMap = {};
 let provinceData = []; // 省
 // eslint-disable-next-line no-unused-vars
@@ -35,7 +67,7 @@ function pushLayer(nextLayer) {
   layerStack.push(nextLayer);
 }
 
-// 返回到上一个图层
+/*// 返回到上一个图层
 function popLayer() {
   if (layerStack.length > 1) {
     let currentLayer = layerStack.pop();
@@ -43,14 +75,14 @@ function popLayer() {
     let previousLayer = layerStack[layerStack.length - 1];
     previousLayer.show();
   }
-}
+}*/
 
 // 將地图的省市=>adcode转换
 function tansformProvinceData(provinceData) {
   let obj = {};
   let trans = function (data) {
     for (let item of data) {
-      obj[item.name] = item.adcode;
+      obj[item.name] = item;
       if (item.districtList && item.districtList.length) {
         trans(item.districtList);
       }
@@ -59,11 +91,17 @@ function tansformProvinceData(provinceData) {
   trans(provinceData);
   return obj;
 }
+let adcodeMapping;
+function getProvinceAdcode(provinceName) {
+  return adcodeMapping[provinceName].adcode;
+}
 
 export default {
   name: "index",
   data() {
     return {
+      activeName: null, // 记录选中的省
+      range: "province", // 记录省市区-层级
       AMap: null,
       map: null,
       districtSearch: null, //行政区查询服务
@@ -88,32 +126,38 @@ export default {
             {
               label: "零售黑龙江区域",
               value: "零售黑龙江区域",
-              provinces: ["黑龙江省", "呼伦贝尔市"],
+              provinces: ["黑龙江省"],
+              citys: ["呼伦贝尔市"],
             },
             {
               label: "雯售吉林区域",
               value: "雯售吉林区域",
               provinces: ["吉林省"], // 大区对应的省
+              citys: [],
             },
             {
               label: "零售辽宁区域",
               value: "零售辽宁区域",
               provinces: ["辽宁省"], // 大区对应的省
+              citys: [],
             },
             {
               label: "零售北京区域",
               value: "零售北京区域",
-              provinces: ["北京市", "天津市", "张家口市", "廊坊市", "承德市", "唐山市", "秦皇岛市"], // 大区对应的省
+              provinces: ["北京市", "天津市"],
+              citys: ["张家口市", "廊坊市", "承德市", "唐山市", "秦皇岛市"],
             },
             {
               label: "零售河北区域",
               value: "零售河北区域",
-              provinces: ["保定市", "石家庄市", "沧州市", "邢台市", "衡水市", "邯郸市"],
+              provinces: [],
+              citys: ["保定市", "石家庄市", "沧州市", "邢台市", "衡水市", "邯郸市"],
             },
             {
               label: "零售山西区域",
               value: "零售山西区域",
               provinces: ["山西省"],
+              citys: [],
             },
           ],
         },
@@ -159,28 +203,79 @@ export default {
       }
       return this.regions.find((item) => item.value === this.form.region);
     },
+    // 已选中区域
     areaSelect() {
       if (!this.form.area) return;
-      return this.regionsSelect.children.find((item) => item.value === this.form.area).provinces;
+      return this.regionsSelect.children.find((item) => item.value === this.form.area);
+    },
+    areaSelectOptions() {
+      if (!this.areaSelect) return [];
+      return [...this.areaSelect.provinces, ...this.areaSelect.citys];
     },
   },
   methods: {
+    // 初始化标准地图
+    initDefaultLayersMap() {
+      this.defaultLayer = this.AMap.createDefaultLayer();
+      this.initMap({
+        layers: [this.defaultLayer],
+      });
+    },
+    // 初始化国家省地图
+    async initDefaultProvinceMap() {
+      this.disProvince = new this.AMap.DistrictLayer.Province({
+        zIndex: 12,
+        adcode: provinceData.map((item) => item.adcode), // 未指定特定adcode，显示所有省级区域
+        depth: 0,
+        styles: {
+          fill: (properties) => {
+            // properties为可用于做样式映射的字段，包含
+            // NAME_CHN:中文名称
+            // adcode_pro
+            // adcode_cit
+            // adcode
+            var adcode = properties.adcode;
+            return this.getFillColor(adcode);
+          },
+          "stroke-width": 1.5,
+          "province-stroke": "cornflowerblue",
+          "city-stroke": "#fff", // 中国地级市边界
+          "county-stroke": "rgba(255,255,255,0.5)", // 中国区县边界
+        },
+      });
+      await this.initMap({
+        layers: [this.disProvince],
+      });
+      this.disProvince.on("click", this.layerClick);
+      this.setProvinceName(provinceData);
+      this.map.add(this.layerProvince); //再添加
+    },
     async initAMap() {
+      window._AMapSecurityConfig = {
+        securityJsCode: "1acb92eeeb115a9db798a31502a196da",
+      };
       this.AMap = await AMapLoader.load({
         key: "0d29a3a5efa3e8e3b3b9f4043aee1287", // 申请好的Web端开发者Key，首次调用 load 时必填
         version: "2.0", // 指定要加载的 JSAPI 的版本，缺省时默认为 1.4.15
         plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.DistrictSearch", "AMap.ControlBar"], //需要使用的的插件列表，如比例尺'AMap.Scale'，支持添加多个如：['...','...']
       });
+
+      // 信息窗体
+      this.infoWindow = new this.AMap.InfoWindow({
+        offset: new this.AMap.Pixel(0, -20), // 偏移量，以使InfoWindow显示在标记正上方
+      });
     },
-    // 行政区查询服务
+    /** 获取所有区域板块的行政编码 **/
     async initDistrictSearch() {
       this.districtSearch = new this.AMap.DistrictSearch({
         extensions: "all",
-        subdistrict: 2,
+        subdistrict: 3,
         level: "country",
       });
       let { districtList } = await this.districtSearchPromise("中国");
       provinceData = districtList[0].districtList;
+      //----------转换成省、市 name对应obj----
+      adcodeMapping = tansformProvinceData(provinceData);
       console.log("provinceData", provinceData);
     },
     // 省名称 layer
@@ -202,6 +297,9 @@ export default {
           zooms: [4, 13],
           zIndex: 1,
           opacity: 1,
+          extData: {
+            name: marker.name, //用户自定义类型数据
+          },
           text: {
             content: marker.name,
             direction: "center",
@@ -230,8 +328,9 @@ export default {
     // 省Layer图层
     initDisCountry(options) {
       if (this.disCountry) {
+        this.disCountry.off("click", this.layerClick);
         this.map.remove(this.disCountry);
-        // this.disProvince = null
+        this.disProvince = null;
       }
       let config = {
         opacity: 0.5,
@@ -253,12 +352,92 @@ export default {
       }
       this.disCountry = new this.AMap.DistrictLayer.Country(config);
       this.map.add(this.disCountry);
+      this.disCountry.on("click", this.layerClick);
+    },
+    // ***********
+    drawAreaMap(options) {
+      if (this.disProvince) {
+        this.disProvince.off("click", this.layerClick);
+        this.map.remove(this.disProvince);
+        this.disProvince = null;
+      }
+      let defaultOptions = {
+        zIndex: 12,
+        adcode: null, // 未指定特定adcode，显示所有省级区域
+        depth: 0,
+        styles: {
+          fill: (properties) => {
+            // properties为可用于做样式映射的字段，包含
+            // NAME_CHN:中文名称
+            // adcode_pro
+            // adcode_cit
+            // adcode
+            var adcode = properties.adcode;
+            return this.getFillColor(adcode);
+          },
+          "stroke-width": 1.5,
+          "province-stroke": "cornflowerblue",
+          "city-stroke": "#fff", // 中国地级市边界
+          "county-stroke": "rgba(255,255,255,0.5)", // 中国区县边界
+        },
+      };
+      if (options) {
+        defaultOptions = {
+          ...defaultOptions,
+          ...options,
+        };
+      }
+      this.disProvince = new this.AMap.DistrictLayer.Province(defaultOptions);
+      this.map.add(this.disProvince);
+      this.disProvince.on("click", this.layerClick);
+      this.disProvince.on("complete", () => {
+        console.log("this.disProvince 2", this.activeName);
+        if (this.activeName) {
+          let center = adcodeMapping[this.activeName].center;
+          this.map.setZoomAndCenter(7, center);
+        }
+      });
+    },
+    async layerClick(e) {
+      if (!e || !e.props) return;
+      console.log("this.layerClick", e, e.props.NAME_CHN);
+      this.activeName = e.props.NAME_CHN;
+      console.log("this.activeName 1", this.activeName);
+      // 省点击（排除直辖市）
+      if (e.props.level === "province") {
+        if (e.props.citycode) {
+          this.range = "area";
+          console.log("直辖市点击", e);
+          await this.initDefaultLayersMap();
+          this.handleCityClick(e);
+          this.setProvinceName();
+        } else {
+          this.range = "city";
+          console.log("省点击", e);
+          // this.handleProvinceClick(e);
+          const allAdCodeMap = this.transformTree(provinceData);
+          // 指定省下的市(过滤直辖市)
+          let { districtList, citycode, adcode } = allAdCodeMap[this.activeName];
+          this.drawAreaMap({
+            adcode: typeof citycode === "string" ? [adcode] : districtList.map((item) => item.adcode),
+            depth: 1,
+          });
+          this.setProvinceName(districtList);
+        }
+      } else if (e.props.level === "city") {
+        this.range = "area";
+        await this.initDefaultLayersMap();
+        console.log("市点击", e);
+        this.handleCityClick(e);
+        this.setProvinceName();
+      }
     },
     // 市Layer图层  简易行政区图-省区
     initProvince() {
       if (this.disProvince) {
+        this.disProvince.off("click", this.layerClick);
         this.map.remove(this.disProvince);
-        // this.disProvince = null
+        this.disProvince = null;
       }
       this.disProvince = new this.AMap.DistrictLayer.Province({
         zIndex: 12,
@@ -281,42 +460,100 @@ export default {
         },
       });
       this.map.add(this.disProvince);
+      this.disProvince.on("click", this.layerClick);
     },
     // 默认标准图层
     initCreateDefaultLayer() {
-      this.defaultLayer = this.AMap.createDefaultLayer();
+      // eslint-disable-next-line no-unused-vars
+      return new Promise((resolve, reject) => {
+        if (this.defaultLayer) {
+          var oldLayers = this.map.getLayers(); // 获取当前所有图层
+          oldLayers.forEach((layer) => {
+            this.map.remove(layer); // 移除每一个旧图层
+          });
+          this.defaultLayer = null;
+        }
+        this.defaultLayer = this.AMap.createDefaultLayer();
+        this.map.add(this.defaultLayer);
+        resolve();
+      });
     },
-    initMap() {
+    initMap(options) {
       return new Promise((resolve) => {
+        if (this.map) {
+          this.map.destroy();
+          //地图对象赋值为null
+          this.map = null;
+        }
         // 初始化地图
-        let map = new this.AMap.Map("container", {
+        let defaultOptions = {
           zoom: 4,
           center: [106.122082, 33.719192],
           isHotspot: false, // 是否开启地图热点和标注的 hover 效果
           defaultCursor: "pointer",
-          layers: [this.defaultLayer],
+          // layers: [new this.AMap.DistrictLayer.Province({})],
           // layers: [this.AMap.createDefaultLayer()],
           viewMode: "3D",
           resizeEnable: true,
-        });
+        };
+        if (options) {
+          defaultOptions = { ...defaultOptions, ...options };
+        }
+        let map = new this.AMap.Map("container", defaultOptions);
         this.map = map;
         window.$map = map;
+        window.$this = this;
         //加载工具条
         map.addControl(new this.AMap.ToolBar({ liteStyle: true }));
         map.addControl(new this.AMap.Scale());
         this.map.on("complete", () => {
-          resolve();
           this.$message.success("地图加载完成！");
-
-          this.setProvinceName(provinceData);
-          // this.map.add(this.layerProvince); //再添加
+          resolve();
         });
       });
     },
     // 加载省名称
     async setProvinceName(provinceData) {
-      this.disLabelMarker && this.layerProvince.remove(this.disLabelMarker); // 先移除
+      const mouseoverCallBack = function (e) {
+        var markerPosition = e.target.getPosition(); // 获取标记的位置
+        var markerName = e.target.getExtData().name; // 假设你在创建LabelMarker时通过setExtData方法存储了名称信息
+
+        // 更新InfoWindow的内容和位置
+        // 这里假设你已经有了一个名为infoWindow的InfoWindow实例
+        this.infoWindow.setContent("<div>" + markerName + "</div>");
+        this.infoWindow.setPosition(markerPosition);
+
+        // 打开InfoWindow
+        this.infoWindow.open(this.map, markerPosition);
+      };
+
+      const mouseoutCallBack = function () {
+        this.infoWindow.close(this.map);
+      };
+
+      const clickCallBack = function (e) {
+        // todo
+        console.log("label 点击", e);
+      };
+
+      // 检查是否存在之前添加的LabelMarker，如果存在，则先移除事件监听器和标记本身
+      if (this.disLabelMarker && this.disLabelMarker.length > 0) {
+        this.disLabelMarker.forEach((marker) => {
+          // 移除mouseover和mouseout事件监听器
+          marker.off("mouseover", mouseoverCallBack.bind(this));
+          marker.off("mouseout", mouseoutCallBack.bind(this));
+          marker.off("click", clickCallBack.bind(this));
+        });
+        this.layerProvince.remove(this.disLabelMarker); // 先移除
+      }
+      // 没有值就是清除
+      if (!provinceData) return;
       this.disLabelMarker = this.getLabelMarkers(provinceData);
+      this.disLabelMarker.forEach((marker) => {
+        marker.on("mouseover", mouseoverCallBack.bind(this));
+        marker.on("mouseout", mouseoutCallBack.bind(this));
+        marker.on("click", clickCallBack.bind(this));
+      });
       // 将 LabelMarker 标记添加到 LabelsLayer 图层上
       this.layerProvince.add(this.disLabelMarker);
       return this.layerProvince;
@@ -324,43 +561,41 @@ export default {
     // 点击省区域
     async handleProvinceClick(event) {
       if (!event.props) return;
-      if (event.props.level === "province") {
-        pushLayer(this.disProvince);
-        // this.map.remove(this.layerProvince); // 移除省
-        // this.setProvince(event.props.adcode, 1);
-        this.layerProvince.hide(); // 隐藏省名称
-        // this.disCountry.hide();// 隐藏省
-        // this.disProvince.show()// 展示市
-        this.disProvince.setDistricts(event.props.adcode + ""); // 显示当前点击的省份
-        // this.setProvince(event.props.adcode, 1);
-        // 设置地图中心和缩放级别
-        this.map.setZoomAndCenter(7, event.origin.lnglat); // 放大并将省份移到中心
+      pushLayer(this.disProvince);
+      // this.map.remove(this.layerProvince); // 移除省
+      // this.setProvince(event.props.adcode, 1);
+      this.layerProvince.hide(); // 隐藏省名称
+      // this.disCountry.hide();// 隐藏省
+      // this.disProvince.show()// 展示市
+      this.disProvince.setDistricts(event.props.adcode + ""); // 显示当前点击的省份
+      // this.setProvince(event.props.adcode, 1);
+      // 设置地图中心和缩放级别
+      this.map.setZoomAndCenter(7, event.origin.lnglat); // 放大并将省份移到中心
 
-        // 获取当前点击省份下的市级数据
-        cityData = this.getCitysForProvince(event.props.NAME_CHN);
-        console.log("cityData", cityData);
-        for (let i = 0; i < cityData.length; i++) {
-          var city = cityData[i];
-          var marker = new this.AMap.LabelMarker({
-            name: city.name,
-            position: [city.center.lng, city.center.lat],
-            zIndex: 10,
-            text: {
-              content: city.name,
-              direction: "center",
-              style: {
-                fontSize: 10,
-                fontWeight: "normal",
-                fillColor: "#fff",
-                backgroundColor: "rgb(246,137,38)",
-                borderColor: "#fff",
-              },
+      // 获取当前点击省份下的市级数据
+      cityData = this.getCitysForProvince(event.props.NAME_CHN);
+      console.log("cityData", cityData);
+      for (let i = 0; i < cityData.length; i++) {
+        var city = cityData[i];
+        var marker = new this.AMap.LabelMarker({
+          name: city.name,
+          position: [city.center.lng, city.center.lat],
+          zIndex: 10,
+          text: {
+            content: city.name,
+            direction: "center",
+            style: {
+              fontSize: 10,
+              fontWeight: "normal",
+              fillColor: "#fff",
+              backgroundColor: "rgb(246,137,38)",
+              borderColor: "#fff",
             },
-          });
-          this.layerCity.add(marker);
-        }
-        this.map.add(this.layerCity);
+          },
+        });
+        this.layerCity.add(marker);
       }
+      this.map.add(this.layerCity);
     },
     // 获取指定省下的市
     getCitysForProvince(name) {
@@ -369,80 +604,92 @@ export default {
     // 点击市区域
     async handleCityClick(event) {
       if (!event.props) return;
-      if (event.props.level === "city") {
-        pushLayer(this.defaultLayer);
-        this.layerCity.hide(); // 隐藏市标题
-        // this.disProvince.hide();// 隐藏市图层
-        // this.defaultLayer.show()
-        this.districtSearch.setLevel("province"); // 设置为省
-        // 如何加载地图详情 todo
-        // let tileLayer = new this.AMap.TileLayer({
-        //   zIndex: 10, // 图层叠加顺序，数字越小，越底层
-        //   extData: {}, // 扩展数据，可以用于自定义图层
-        // });
-        // this.map.add(tileLayer);
-        // this.disProvince.setMap(null);
-        // 设置地图中心和缩放级别
-        this.map.setZoomAndCenter(12, event.origin.lnglat); // 放大并将省份移到中心
+      // pushLayer(this.defaultLayer);
+      this.layerCity && this.layerCity.hide(); // 隐藏市标题
 
-        // 获取市轮廓
-        let result = await this.districtSearchPromise(event.props.NAME_CHN);
-        // 外多边形坐标数组和内多边形坐标数组
-        var outer = [
-          // eslint-disable-next-line no-undef
-          new this.AMap.LngLat(-360, 90, true),
-          // eslint-disable-next-line no-undef
-          new this.AMap.LngLat(-360, -90, true),
-          // eslint-disable-next-line no-undef
-          new this.AMap.LngLat(360, -90, true),
-          // eslint-disable-next-line no-undef
-          new this.AMap.LngLat(360, 90, true),
-        ];
-        var holes = result.districtList[0].boundaries;
+      this.map.remove(this.disProvince);
+      // this.disProvince.hide();// 隐藏市图层
+      // this.defaultLayer.show()
+      this.districtSearch.setLevel("province"); // 设置为省
+      // 如何加载地图详情 todo
+      // let tileLayer = new this.AMap.TileLayer({
+      //   zIndex: 10, // 图层叠加顺序，数字越小，越底层
+      //   extData: {}, // 扩展数据，可以用于自定义图层
+      // });
+      // this.map.add(tileLayer);
+      // this.disProvince.setMap(null);
+      // 设置地图中心和缩放级别
+      this.map.setZoomAndCenter(12, event.origin.lnglat); // 放大并将省份移到中心
 
-        var pathArray = [outer];
-        pathArray.push.apply(pathArray, holes);
+      // 获取市轮廓
+      let result = await this.districtSearchPromise(event.props.NAME_CHN);
+      // 外多边形坐标数组和内多边形坐标数组
+      var outer = [
         // eslint-disable-next-line no-undef
-        this.polygon = new this.AMap.Polygon({
-          strokeColor: "#00eeff",
-          strokeWeight: 1,
-          fillColor: "#71B3ff",
-          fillOpacity: 0.5,
-        });
-        this.polygon.setPath(pathArray);
-        this.map.add(this.polygon);
-
-        //创建右键菜单
+        new this.AMap.LngLat(-360, 90, true),
         // eslint-disable-next-line no-undef
-        var contextMenu = new this.AMap.ContextMenu();
-        //右键放大
-        contextMenu.addItem(
-          "返回全国",
-          (e) => {
-            console.log(e);
-            popLayer();
-            popLayer();
-            this.map.remove(this.polygon);
-          },
-          0
-        );
-        contextMenu.addItem(
-          "返回省",
-          (e) => {
-            console.log(e);
-            popLayer();
-            this.map.remove(this.polygon);
-          },
-          1
-        );
+        new this.AMap.LngLat(-360, -90, true),
+        // eslint-disable-next-line no-undef
+        new this.AMap.LngLat(360, -90, true),
+        // eslint-disable-next-line no-undef
+        new this.AMap.LngLat(360, 90, true),
+      ];
+      var holes = result.districtList[0].boundaries;
 
-        // 遮罩层点击
-        this.polygon.on("click", (e) => {
-          console.log("遮罩单击事件", e);
-          // 返回市 todo
-          contextMenu.open(this.map, e.lnglat);
-        });
-      }
+      var pathArray = [outer];
+      pathArray.push.apply(pathArray, holes);
+      // eslint-disable-next-line no-undef
+      this.polygon = new this.AMap.Polygon({
+        strokeColor: "#00eeff",
+        strokeWeight: 1,
+        fillColor: "#71B3ff",
+        fillOpacity: 0.5,
+      });
+      this.polygon.setPath(pathArray);
+      this.map.add(this.polygon);
+
+      //创建右键菜单
+      // eslint-disable-next-line no-undef
+      var contextMenu = new this.AMap.ContextMenu();
+      //右键放大
+      contextMenu.addItem(
+        "返回全国",
+        (e) => {
+          console.log(e);
+          this.map.remove(this.polygon);
+          this.map.remove(this.defaultLayer);
+          this.initDefaultProvinceMap();
+          contextMenu.close();
+        },
+        0
+      );
+      contextMenu.addItem(
+        "返回省",
+        (e) => {
+          console.log(e);
+          // popLayer();
+          this.map.remove(this.polygon);
+          this.map.remove(this.defaultLayer);
+
+          const allAdCodeMap = this.transformTree(provinceData);
+          // 指定省下的市(过滤直辖市)
+          let { districtList, citycode, adcode } = allAdCodeMap[this.activeName];
+          this.drawAreaMap({
+            adcode: typeof citycode === "string" ? [adcode] : districtList.map((item) => item.adcode),
+            depth: 1,
+          });
+          this.setProvinceName(districtList);
+          contextMenu.close();
+        },
+        1
+      );
+
+      // 遮罩层点击
+      this.polygon.on("click", (e) => {
+        console.log("遮罩单击事件", e);
+        // 返回市 todo
+        contextMenu.open(this.map, e.lnglat);
+      });
     },
     loadPoints(cityName) {
       this.getPoints(`${cityName}`)
@@ -551,22 +798,36 @@ export default {
         // 重置地图
         this.setProvinceName(provinceData);
         // todo 重新渲染全国地图
-        this.disCountry.setDistricts("");
+        this.drawAreaMap({
+          adcode: provinceData.map((item) => item.adcode),
+          depth: 0,
+        });
+        // this.disCountry.setDistricts("");
         return;
       } else if (this.form.area) {
         // 重新设置depth层级为2
-        this.initDisCountry({
-          depth: 2,
-          adcode: this.areaSelect.map((province) => getProvinceAdcode(province)),
+        // this.initDisCountry({
+        //   depth: 2,
+        //   adcode: this.areaSelectOptions.map((province) => getProvinceAdcode(province)),
+        // });
+        this.drawAreaMap({
+          adcode: this.areaSelectOptions.map((province) => getProvinceAdcode(province)),
+          depth: 1,
         });
+        this.setProvinceName(this.getDistrictListForAreaSelectOptions(this.areaSelect));
         //
-        // this.disCountry.setDistricts(this.areaSelect.map((province) => getProvinceAdcode(province)));
+        // this.disCountry.setDistricts(this.areaSelectOptions.map((province) => getProvinceAdcode(province)));
       } else if (this.form.region) {
         //
         // this.drawRegion()
         // 清除页面
         // this.distCountry.setMap(null);
-        this.toogleProvinces();
+        // this.toogleProvinces();
+        this.drawAreaMap({
+          adcode: this.regionsSelect.provinces.map((province) => getProvinceAdcode(province)),
+          depth: 0,
+        });
+        this.setProvinceName(this.getDistrictListForAreaSelectOptions(this.regionsSelect));
       }
     },
     // 切换
@@ -641,11 +902,34 @@ export default {
     },
     // 先查询大区的数据
     getRegionData() {},
+    /** @name 将树形的行政编码转成对象形式 **/
+    transformTree(districtList) {
+      let allAdCodeMap = {};
+      allAdCodeMap = districtList.reduce((result, province) => {
+        result[province.name] = province;
+        return result;
+      }, {});
+      return allAdCodeMap;
+    },
+    // 根据areaSelectOptions获取DistrictList
+    getDistrictListForAreaSelectOptions(obj) {
+      if (!obj) return [];
+      let { citys, provinces } = obj;
+      let data = [];
+      if (citys.length) {
+        for (let key of citys) {
+          data.push(adcodeMapping[key]);
+        }
+      }
+      if (provinces.length) {
+        for (let key of provinces) {
+          data.push(adcodeMapping[key]);
+        }
+      }
+      return data;
+    },
   },
   async mounted() {
-    window._AMapSecurityConfig = {
-      securityJsCode: "1acb92eeeb115a9db798a31502a196da",
-    };
     let provinces = await this.getProvinces();
     this.provincesObj = provinces.reduce((obj, item) => {
       obj[item.name] = item.value;
@@ -655,13 +939,19 @@ export default {
     await this.initDistrictSearch();
     this.initLayerProvince();
     this.initLayerCity();
-    this.initCreateDefaultLayer();
-    await this.initMap();
-    this.initDisCountry();
+    this.initDefaultProvinceMap();
+    // this.layerManager = new LayerManager(this.map);
+    // this.initDisCountry();
+    // 创建省
+    // this.drawAreaMap({
+    //   adcode: provinceData.map(item => item.adcode),
+    //   depth: 0
+    // });
+    // this.map.setLayers([this.disProvince]);
     layerStack.push(this.disCountry);
-    this.initProvince();
+    // this.initProvince();
 
-    this.disCountry.on("click", (e) => {
+    /*this.disCountry.on("click", (e) => {
       console.log("省点击", e);
       this.handleProvinceClick(e);
     });
@@ -669,13 +959,18 @@ export default {
     this.disProvince.on("click", (e) => {
       console.log("市点击", e);
       this.handleCityClick(e);
-    });
-    this.map.add(this.layerProvince); //再添加
-    this.defaultLayer.hide(); // 先把标准地图隱藏
-    this.disProvince.hide(); // 先把市隱藏
+    });*/
+    // this.map.add(this.layerProvince); //再添加
+    // this.disProvince.hide(); // 先把市隱藏
   },
   unmounted() {
+    //解绑地图的点击事件
+    //销毁地图，并清空地图容器
     this.map?.destroy();
+    //地图对象赋值为null
+    this.map = null;
+    //清除地图容器的 DOM 元素
+    document.getElementById("container").remove(); //"container" 为指定 DOM 元素的id
   },
 };
 </script>
