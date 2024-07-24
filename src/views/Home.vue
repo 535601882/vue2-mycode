@@ -16,12 +16,16 @@
       <!-- <template v-slot:default="config">默认{{ config }}</template> -->
       <template v-slot:default><div id="app1" class="app-main">默认</div></template>
     </CustomInput>
+    <div id="demo"></div>
+    <div id="haha"></div>
   </PageContainer>
 </template>
 
 <script>
+import Vue from "vue";
 import api from "@/api";
 import CustomInput from "./Hoc/CustomInput";
+import HelloWorld from "@cp/HelloWorld";
 export default {
   name: "Home",
   components: {
@@ -50,6 +54,7 @@ export default {
     console.log(this.$refs.CustomInput.componentInstance);
     console.log("created", this.$i18n, this.$i18n.messages);
     this.handleSearchClick();
+    this.getComponentInsertDom();
   },
   methods: {
     handleClick() {
@@ -87,6 +92,20 @@ export default {
         this.table.data = res.result;
         this.paging.total = res.totalCount;
       });
+    },
+    getComponentInsertDom() {
+      let Hello = Vue.extend(HelloWorld);
+      let helloDom = new Hello({
+        props: {
+          msg: "1111111111111",
+        },
+      }).$mount();
+
+      helloDom.$on("input", (payload) => {
+        console.log("HelloWorld emit input事件 event:", payload);
+      });
+
+      document.getElementById("demo").appendChild(helloDom.$el);
     },
   },
   watch: {

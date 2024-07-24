@@ -4,6 +4,7 @@ const fs = require("fs")
 const path = require("path")
 const multer = require('multer')
 const Qs = require("qs")
+const axios = require("./axios")
 
 class API {
   getUsers(req, res) {
@@ -189,6 +190,41 @@ class API {
       message: req.query
     })
   }
+  // SSE请求
+  createSSEData(req, res) {
+    // 检查认证信息
+    const authHeader = req.headers['authorization'];
+    console.log("authHeader",authHeader)
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive"
+    });
+
+    sseRandom(res)
+  }
+  // 请求下载图片 get
+  getImgForUrl(req, res) {
+    let url = req.query.url
+    if (!url) return res.send({
+      status: 0,
+      message: 'URL不能为空'
+    })
+    axios.get(url,{responseType: 'arraybuffer'}).then(data => {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.send(data)
+    })
+  }
 }
 const api = new API()
 module.exports = api
+
+
+function sseRandom(res) {
+  res.write(`id: ${ new Date().getTime()}\n`);
+  res.write(`event: stdout\n`);
+  res.write("data:  begin message\n");
+  res.write("data: " + (Math.floor(Math.random() * 1000) + 1) + "\n");
+  res.write("data:  continue message\n\n");
+  setTimeout(() => sseRandom(res), Math.random() * 5000);
+}

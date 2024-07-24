@@ -1,17 +1,70 @@
 import axios from "axios";
 import store from "@/store";
 import router from "@/router";
+import xhr from "axios/lib/adapters/xhr";
 const setting = require("@/config/setting");
 // 标记是否正在刷新 Token
 let isRefreshing = false;
 // 存储待重发的请求
 let retryRequests = [];
+// 存储需要缓存的接口
+const requestCache = new Map();
+// 请求中的接口数据
+const pendingRequests = new Map();
 
+//生成标识请求的唯一key(缓存一般都是 GET 接口)
+const generateCacheKey = (config) => {
+  let { url, method, params } = config;
+  return `${encodeURIComponent(url)}_${method.toUpperCase()}_${JSON.stringify(params)}`;
+};
+// 利用adapter实现相同接口的请求缓存
+const cacheAdapterEnhancer = async (config) => {
+  const key = generateCacheKey(config);
+  // 是否需要缓存
+  if (config.cache) {
+    console.log("执行缓存");
+    if (requestCache.has(key)) {
+      // 增加过期逻辑
+      return Promise.resolve(requestCache.get(key));
+    }
+    if (pendingRequests.has(key)) {
+      return new Promise((resolve, reject) => {
+        pendingRequests.get(key).push({ resolve, reject });
+      });
+    }
+    pendingRequests.set(key, []);
+  }
+  try {
+    let response = await xhr(config);
+    // const cacheValue = {
+    //   timestamp: Date.now(),
+    //   data: response.data,
+    // };
+    if (config.cache) {
+      requestCache.set(key, response);
+
+      if (pendingRequests.has(key)) {
+        pendingRequests.get(key).forEach(({ resolve }) => resolve(response));
+        pendingRequests.delete(key);
+      }
+    }
+    return response;
+  } catch (error) {
+    // 处理错误
+    console.error("Request failed:", error);
+    if (config.cache && pendingRequests.has(key)) {
+      pendingRequests.get(key).forEach(({ reject }) => reject(error));
+      pendingRequests.delete(key);
+    }
+    throw error; // 重抛错误以便进一步处理
+  }
+};
 // 创建axios实例
 const instance = axios.create({
   baseURL: setting.BASE_URL, // 设置接口的基础url
   timeout: 5000, // 请求超时时间
   withCredentials: false, // cookie跨域必备
+  adapter: cacheAdapterEnhancer,
 });
 
 // 请求拦截器

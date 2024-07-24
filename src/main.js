@@ -7,6 +7,16 @@ import i18n from "./plugins/i18n";
 import("@/permission");
 // 核心插件
 Vue.use(plugins);
+// 监听网络状态变化
+window.addEventListener("online", function () {
+  console.log("网络已连接");
+  // 在这里添加网络恢复时需要执行的操作
+});
+
+window.addEventListener("offline", function () {
+  console.log("网络已断开");
+  // 在这里添加网络断开时需要执行的操作
+});
 
 new Vue({
   router,

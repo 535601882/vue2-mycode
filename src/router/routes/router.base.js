@@ -78,6 +78,30 @@ const routes = [
     meta: { title: "visualDrag", keepalive: true },
     component: () => import(/* webpackChunkName: "visualDrag" */ "@/views/visualDrag/index.vue"),
   },
+  {
+    path: "/games",
+    name: "Games",
+    meta: { title: "games", keepalive: true },
+    component: () => import(/* webpackChunkName: "games" */ "@/views/Games/index.vue"),
+  },
+  {
+    path: "/low-code",
+    name: "lowCode",
+    meta: { title: "lowCode", keepalive: true },
+    component: () => import(/* webpackChunkName: "lowCode" */ "@/views/lowCode/index.vue"),
+  },
+  {
+    path: "/map",
+    name: "map",
+    meta: { title: "map", keepalive: true },
+    component: () => import(/* webpackChunkName: "map" */ "@/views/map/index.vue"),
+  },
+  {
+    path: "/chat",
+    name: "chat",
+    meta: { title: "chat", keepalive: true },
+    component: () => import(/* webpackChunkName: "chat" */ "@/views/Chat/index.vue"),
+  },
   // ROUTE IMPORT
   //   ],
   // },

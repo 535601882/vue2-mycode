@@ -636,6 +636,7 @@ export default {
       ];
       var holes = result.districtList[0].boundaries;
 
+      //todo--------1：显示市，其他地方遮罩----------
       var pathArray = [outer];
       pathArray.push.apply(pathArray, holes);
       // eslint-disable-next-line no-undef
@@ -645,9 +646,21 @@ export default {
         fillColor: "#71B3ff",
         fillOpacity: 0.5,
       });
-      this.polygon.setPath(pathArray);
-      this.map.add(this.polygon);
-
+      // this.polygon.setPath(pathArray);
+      // this.map.add(this.polygon);
+      // 设置地图的遮罩----------2：只显示当前市--------------
+      this.map.setMask(holes.map((item) => [item]));
+      //边界线
+      this.map.add(
+        holes.map((item) => {
+          return new this.AMap.Polyline({
+            path: item,
+            strokeColor: "#99ffff",
+            strokeWeight: 4,
+          });
+        })
+      );
+      //------------------------------------------------------
       //创建右键菜单
       // eslint-disable-next-line no-undef
       var contextMenu = new this.AMap.ContextMenu();

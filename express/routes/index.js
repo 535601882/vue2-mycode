@@ -33,6 +33,44 @@ const upload = multer({
 module.exports = app => {
   app.get("/getUsers", database.getUsers)
   app.get("/getUserId", database.getUserId)
+  /** POST Methods */
+  /**
+   * @openapi
+   * '/addUser':
+   *  post:
+   *     tags:
+   *     - User Controller
+   *     summary: Create a user
+   *     requestBody:
+   *      required: true
+   *      content:
+   *        application/json:
+   *           schema:
+   *            type: object
+   *            required:
+   *              - username
+   *              - email
+   *              - password
+   *            properties:
+   *              username:
+   *                type: string
+   *                default: johndoe
+   *              email:
+   *                type: string
+   *                default: johndoe@mail.com
+   *              password:
+   *                type: string
+   *                default: johnDoe20!@
+   *     responses:
+   *      201:
+   *        description: Created
+   *      409:
+   *        description: Conflict
+   *      404:
+   *        description: Not Found
+   *      500:
+   *        description: Server Error
+   */
   app.post("/addUser", database.addUser)
   app.delete("/delUser", database.delUser)
   app.put("/editUser", database.editUser)
@@ -47,4 +85,8 @@ module.exports = app => {
   app.post("/postApplicationJson", database.postApplicationJson)
   // 利用get请求发送obj
   app.get("/createGet", database.createGet)
+  // SSE连接
+  app.get("/sse", database.createSSEData)
+  // 获取远程图片
+  app.get("/getImg", database.getImgForUrl)
 }

@@ -2,6 +2,12 @@ const express = require('express')
 const path = require("path")
 const cors = require('cors');
 const app = express()
+const swagger = require ('./swagger' ) ;
+const port = 3001
+
+require("dotenv").config({
+  path: [path.resolve(__dirname, '.env.local'), path.resolve(__dirname, './.env')] // 配置文件路径
+}).parsed // 引入 dotenv
 
 const bodyParser = require('body-parser')
 
@@ -16,8 +22,11 @@ app.use(bodyParser.urlencoded({
   extended: false
 }));
 
+swagger(app, port)
+
 require('./routes')(app)
 
-app.listen(3001, () => {
+
+app.listen(port, () => {
   console.log("app listening on port 3001")
 })
