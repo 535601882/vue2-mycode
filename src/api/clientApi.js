@@ -1,5 +1,5 @@
 import axios from "@/plugins/axios";
-let baseUrl = "http://localhost:3001";
+let baseUrl = process.env.VUE_APP_API;
 
 export function getUsers(params) {
   return axios({

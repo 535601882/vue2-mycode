@@ -89,4 +89,11 @@ module.exports = app => {
   app.get("/sse", database.createSSEData)
   // 获取远程图片
   app.get("/getImg", database.getImgForUrl)
+  /**
+   * 微信公众号
+   * **/
+  app.get("/wexinLogin", database.wexinLogin)
+  app.get("/getWeixinAccessToken", database.getWeixinAccessToken)
+  app.get("/checkSignature", database.checkSignature)
+  app.get("/getWeixinUserinfo", database.getWeixinUserinfo)
 }

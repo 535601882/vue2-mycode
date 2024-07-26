@@ -123,4 +123,10 @@ export default [
     icon: "el-icon-location",
     children: [],
   },
+  {
+    title: "wechat",
+    path: "/wechat",
+    icon: "el-icon-location",
+    children: [],
+  },
 ];

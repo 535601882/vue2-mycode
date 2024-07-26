@@ -29,7 +29,10 @@ utils.open = function (url) {
   a.click();
   document.body.removeChild(document.getElementById("admin-menu-link"));
 };
-
+// 是否是在微信内访问
+utils.isInWeChat = function () {
+  return navigator.userAgent.indexOf("MicroMessenger") > -1;
+};
 /**
  * 利用字符串表达式操作对象
  * @param obj

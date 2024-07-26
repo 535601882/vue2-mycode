@@ -16,4 +16,18 @@ mongoose.connection.on('disconnected',function(){
   console.log('Mongoose connection disconnected');
 })
 
+// 当进程关闭时，关闭Redis客户端连接
+process.on('exit', () => {
+  console.log('关闭Mongoose客户端连接...');
+  // 当你准备关闭应用程序时，调用disconnect来断开MongoDB连接
+  mongoose.disconnect((err) => {
+    if (err) {
+      console.error('Mongoose disconnection error: ', err);
+    } else {
+      console.log('Mongoose disconnected through `mongoose.disconnect()`');
+    }
+    // 在这里可以执行其他关闭资源的操作，比如关闭服务器等
+  });
+});
+
 module.exports = mongoose

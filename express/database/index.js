@@ -4,7 +4,21 @@ const fs = require("fs")
 const path = require("path")
 const multer = require('multer')
 const Qs = require("qs")
+const crypto = require("crypto");
 const axios = require("./axios")
+const log = require("../utils/log4j")
+const client = require('../utils/redis');
+
+// 用于存储 access_token 和 openid 的键名前缀
+const ACCESS_TOKEN_KEY_PREFIX = 'wechat_access_token:';
+const OPENID_KEY_PREFIX = 'wechat_openid:';
+// 用于存储已使用的 code 的键名前缀
+const USED_CODE_KEY_PREFIX = 'wechat_used_code:';
+// 用于存储已缓存的用户信息的键名前缀
+const USER_INFO_KEY_PREFIX = 'wechat_user_info:';
+
+// 用于存储基础 access_token 的键名
+const BASE_ACCESS_TOKEN_KEY = 'wechat_base_access_token';
 
 class API {
   getUsers(req, res) {
@@ -215,6 +229,165 @@ class API {
       res.send(data)
     })
   }
+
+  /***
+   * 微信公众号
+   */
+  // 引导用户进入授权页面同意授权，获取code
+  // 通过code换取网页授权access_token（与基础支持中的access_token不同）
+  // 如果需要，开发者可以刷新网页授权access_token，避免过期
+  // 通过网页授权access_token和openid获取用户基本信息（支持UnionID机制）
+
+  // 微信登录
+  wexinLogin(req, res) {
+    const APPID = process.env.APPID//公众号的唯一标识
+    const REDIRECT_URI = process.env.REDIRECT_HOST + "/wechat"//授权后重定向的回调链接地址， 请使用 urlEncode 对链接进行处理
+    const SCOPE = "snsapi_userinfo"//授权作用域，可取值：snsapi_base：自动确认授权、snsapi_userinfo:手动确认授权
+    const STATE = "123"
+    // 如果用户同意授权，页面将跳转至 redirect_uri/?code=CODE&state=STATE。
+    const url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APPID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}&state=${STATE}#wechat_redirect`
+    log.info("wexinLogin url " + url)
+    res.redirect(url);
+  }
+  //通过code换取网页授权access_token
+  async getWeixinAccessToken(req, res) {
+    log.info("getWeixinAccessToken 开始");
+    const APPID = process.env.APPID//公众号的唯一标识
+    const SECRET = process.env.SECRET
+    const CODE = req.query.code
+
+    // 检查 code 是否已被使用
+    const usedCode = await client.get(USED_CODE_KEY_PREFIX + CODE)
+
+    // const value = await client.get(USED_CODE_KEY_PREFIX + CODE)
+    log.info("usedCode的值"+USED_CODE_KEY_PREFIX + CODE);
+    log.info(usedCode);
+    // log.info(value);
+    if (usedCode) {
+      log.info('Code has already been used.');
+      log.info(usedCode);
+      res.status(400).send('Code has already been used.');
+      return;
+    }
+
+    let url = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APPID}&secret=${SECRET}&code=${CODE}&grant_type=authorization_code`
+    log.info("getWeixinAccessToken url : " + url)
+    axios.get(url).then(response => {
+      log.info("getWeixinAccessToken data : ")
+/*      {
+        access_token: null,//用于调用微信开放接口的凭据，有效期有限。
+        expires_in: null,
+        refresh_token: null,
+        openid: null,//用户的唯一标识符，用于区分不同的用户。
+        scope: null
+      }*/
+      log.info(response)
+      if (response && response.access_token) {
+        // 将 access_token 存储到 Redis
+        client.set(ACCESS_TOKEN_KEY_PREFIX + response.openid, response.expires_in, response.access_token);
+        // 将 openid 存储到 Redis
+        client.set(OPENID_KEY_PREFIX + response.code, response.openid, 'EX', 600); // 10 minutes
+        // 将 code 标记为已使用
+        client.set(USED_CODE_KEY_PREFIX + response.code, 'true', 'EX', 600); // 10 minutes
+      }
+      res.send(response)
+    })
+  }
+  // 第三步：拉取用户信息(需scope为 snsapi_userinfo)
+  async getWeixinUserinfo(req,res) {
+    let access_token = req.query.access_token;
+    let openid = req.query.openid;
+
+    // 检查是否已有缓存的用户信息
+    const cachedUserInfo = await client.get(USER_INFO_KEY_PREFIX + openid)
+
+    let userInfo;
+    if (cachedUserInfo) {
+      log.info('从缓存里读取用户信息');
+      userInfo = JSON.parse(cachedUserInfo);
+      return res.send(userInfo)
+    }
+
+    let url = 'https://api.weixin.qq.com/sns/userinfo?access_token='+access_token+'&openid='+openid+'&lang=zh_CN'
+    log.info("getWeixinUserinfo url : " + url)
+    // 使用access_token和openid获取用户信息
+    axios.get(url).then(userinfo => {
+      // 第四步：根据获取的用户信息进行对应操作
+      log.info('获取微信信息成功！');
+      log.info(userinfo);
+      // 小测试，实际应用中，可以由此创建一个帐户
+      if (userinfo && userinfo.openid) {
+        // 将用户信息存储到 Redis
+        client.set(USER_INFO_KEY_PREFIX + openid, JSON.stringify(userinfo), 'EX', 7200); // 2 hours
+      }
+      res.send(userinfo);
+    });
+  }
+  // 验证
+  checkSignature(req,res) {
+    const signature = req.query.signature;// 微信传过来的签名
+    const timestamp = req.query.timestamp;// 微信传过来的时间戳
+    const nonce = req.query.nonce;// 微信传过来的随机数
+    const token = "test"// 用户配置的接口配置信息Token
+
+    var str = [token, timestamp, nonce].sort().join('');
+    if (signature === crypto.createHash('sha1').update(str).digest('hex')) {
+      log.info("checkSignature 验证成功" + req.query.echostr)
+      res.send(req.query.echostr);
+    } else {
+      log.info("checkSignature 验证失败")
+      res.send(false);
+    }
+  }
+
+  /**
+   * 微信公众号基础接口
+   */
+  // 获取access_token
+  async get_access_token(req,res) {
+    try {
+      // 从 Redis 中获取 access_token
+      const accessToken = await client.get(BASE_ACCESS_TOKEN_KEY)
+
+      if (accessToken) {
+        res.json({ access_token: accessToken });
+      } else {
+        // 重新获取
+        const newAccessToken = await this.fetchAccessToken();
+        res.json({ access_token: newAccessToken });
+      }
+    } catch (error) {
+      res.status(500).send('An error occurred while fetching access token.');
+    }
+  }
+  // 请求access_token
+  async fetchAccessToken() {
+    try {
+      const response = await axios.get('https://api.weixin.qq.com/cgi-bin/token', {
+        params: {
+          grant_type: 'client_credential',
+          appid: process.env.APPID,
+          secret: process.env.SECRET,
+        },
+      });
+
+      if (response && response.access_token) {
+        const accessToken = response.access_token;
+        const expiresIn = response.expires_in;
+
+        // 将 access_token 存储到 Redis
+        client.setex(BASE_ACCESS_TOKEN_KEY, expiresIn - 300, accessToken); // 减去300秒，提前刷新
+
+        return accessToken;
+      } else {
+        throw new Error('Failed to get access token');
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
 }
 const api = new API()
 module.exports = api

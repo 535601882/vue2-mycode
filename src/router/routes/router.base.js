@@ -102,6 +102,12 @@ const routes = [
     meta: { title: "chat", keepalive: true },
     component: () => import(/* webpackChunkName: "chat" */ "@/views/Chat/index.vue"),
   },
+  {
+    path: "/wechat",
+    name: "wechat",
+    meta: { title: "wechat", keepalive: true },
+    component: () => import(/* webpackChunkName: "wechat" */ "@/views/WeChat/index.vue"),
+  },
   // ROUTE IMPORT
   //   ],
   // },

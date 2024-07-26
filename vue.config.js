@@ -161,5 +161,6 @@ module.exports = {
   devServer: {
     port: 3110,
     before: setting.USE_MOCK && require("./mock/server.js"),
+    disableHostCheck: true,
   },
 };
