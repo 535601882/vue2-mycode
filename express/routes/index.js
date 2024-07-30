@@ -1,6 +1,7 @@
 const path = require("path")
 const fs = require("fs")
-const database = require("../database/index.js")
+const database = require("../database/modules/users")
+const wechat = require("../database/modules/wechat")
 //引入multer
 const multer = require('multer')
 const uploadsFolder = path.join(__dirname, '../uploads')
@@ -92,8 +93,9 @@ module.exports = app => {
   /**
    * 微信公众号
    * **/
-  app.get("/wexinLogin", database.wexinLogin)
-  app.get("/getWeixinAccessToken", database.getWeixinAccessToken)
-  app.get("/checkSignature", database.checkSignature)
-  app.get("/getWeixinUserinfo", database.getWeixinUserinfo)
+  app.get("/wexinLogin", wechat.wexinLogin)
+  app.get("/getWeixinAccessToken", wechat.getWeixinAccessToken)
+  app.get("/checkSignature", wechat.checkSignature)
+  app.get("/getWeixinUserinfo", wechat.getWeixinUserinfo)
+  app.get("/getJsApiData", wechat.getJsApiData)
 }
