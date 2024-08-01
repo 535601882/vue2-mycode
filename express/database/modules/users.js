@@ -1,5 +1,6 @@
 //4.有了模型构造函数以后，使用这个构造函数对 users 集合中的数据进行操作(增删改查)
-const User = require("../users")
+const User = require("../user")
+const bcrypt = require('bcryptjs');
 const fs = require("fs")
 const path = require("path")
 const multer = require('multer')
@@ -70,22 +71,41 @@ class API {
       })
     })
   }
-  addUser(req, res) {
-    let response = res
-    User.create(req.body, function (err, res) {
-      if (err) {
-        response.send({
-          status: 0,
-          message: '添加失败'
-        })
-      } else {
-        response.send({
-          status: 200,
-          message: '添加成功'
-        })
-      }
-    });
+  async addUser(req, res) {
+    // 批量
+    // let response = res
+    // User.create(req.body, function (err, res) {
+    //   if (err) {
+    //     response.send({
+    //       status: 0,
+    //       message: '添加失败'
+    //     })
+    //   } else {
+    //     response.send({
+    //       status: 200,
+    //       message: '添加成功'
+    //     })
+    //   }
+    // });
+    try {
+      // Check if a user with the same email already exists
+      const existingUser = await User.findOne({ email: req.body.email });
 
+      if (existingUser) {
+        return res.status(409).json({ message: 'Email is already registered.' });
+      }
+
+      // Hash the password
+      req.body.password = bcrypt.hashSync(req.body.password, 10);
+
+      // Create and save the new user
+      const newUser = new User(req.body);
+      const savedUser = await newUser.save();
+
+      res.status(201).json(savedUser);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
   }
   delUser(req, res) {
     let response = res

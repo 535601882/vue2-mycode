@@ -2,6 +2,8 @@ const path = require("path")
 const fs = require("fs")
 const database = require("../database/modules/users")
 const wechat = require("../database/modules/wechat")
+const wechatPay = require("../database/modules/wechatPay")
+const product = require("../database/modules/product")
 //引入multer
 const multer = require('multer')
 const uploadsFolder = path.join(__dirname, '../uploads')
@@ -98,4 +100,7 @@ module.exports = app => {
   app.get("/checkSignature", wechat.checkSignature)
   app.get("/getWeixinUserinfo", wechat.getWeixinUserinfo)
   app.get("/getJsApiData", wechat.getJsApiData)
+  /**生成订单**/
+  app.post("/createOrder", wechatPay.createOrder)
+  app.post("/addProduct", product.addProduct)
 }

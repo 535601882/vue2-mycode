@@ -1,14 +1,22 @@
 const mongoose = require("./db.js")
 const Schema = mongoose.Schema
+const bcrypt = require('bcryptjs');
 //2.设计集合结构（表结构）
 const userSchema = new Schema({
-  date:{type:Date},
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
   birthday:{type:Date},
-  name:{type:String},
   address:{type:String}
-}, {
-  versionKey: false // 禁用 __v 字段
-})
+}, { timestamps: true })
+
+// Hash the password before saving the user
+userSchema.pre('save', async function(next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
 //3.将文档结构发布为模型
 /**
  * User :第一个参数是跟 model 对应的集合（ collection ）名字的 单数 形式
