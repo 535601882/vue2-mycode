@@ -5,6 +5,7 @@ const app = express()
 const swagger = require ('./swagger' ) ;
 const client = require("./utils/redis")
 const bodyParser = require('body-parser')
+const log = require("./utils/log4j")
 const port = 3001
 
 client.connect(); // 连接到Redis服务器
@@ -28,6 +29,20 @@ app.use(bodyParser.urlencoded({
   extended: false
 }));
 
+app.use((req, res, next) => {
+  const { method, originalUrl, query, body } = req;
+  const queryParameters = JSON.stringify(query);
+  const queryBody = JSON.stringify(body);
+  // 在请求开始时记录基本信息
+  log.info(`Request received - Method: ${method}, URL: ${originalUrl}, Query Parameters: ${queryParameters},Body Parameters: ${queryBody}`);
+
+  // 响应结束后记录响应状态码
+  res.on('finish', () => {
+    log.info(`Response sent - Status Code: ${res.statusCode}`);
+  });
+
+  next(); // 调用下一个中间件或路由处理器
+});
 swagger(app, port)
 
 require('./routes')(app)

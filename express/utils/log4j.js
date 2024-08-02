@@ -10,17 +10,23 @@ const levels = {
   'error':log4js.levels.ERROR,
   'fatal':log4js.levels.FATAL,
 }
+// 假设这是一个过滤函数，它检查日志内容是否为空
+function nonEmptyFilter(logEvent) {
+  return logEvent.data.some(part => part && part.toString().trim().length > 0);
+}
 log4js.configure({
   //设置追加器
   appenders:{
     console:{ type:'console' },//追加器1
     info:{//追加器2
-      type: 'file',
-      filename: 'logs/all-logs.log'
+      type: 'dateFile',
+      filename: 'logs/info', // 注意这里的filename格式，它将与pattern结合生成最终的文件名
+      pattern: 'yyyy-MM-dd.log', // 这里定义了日期模式
+      alwaysIncludePattern: true
     },
     error:{//追加器3
       type: 'dateFile',
-      filename:'logs/log',
+      filename:'logs/error',
       pattern:'yyyy-MM-dd.log',
       alwaysIncludePattern:true// 设置文件名称为 filename + pattern
     }
