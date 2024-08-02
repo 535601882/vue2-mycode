@@ -129,6 +129,9 @@ function uploadFile (buffer, type) {
       console.log(result)
       log.info("上传附件")
       log.info(result)
+      if (result.errcode) {
+        return reject(result)
+      }
       resolve(result.media_id)
     }).catch(e => {
       console.log("上传失败",e,form)
@@ -498,11 +501,96 @@ function replyMsg(req,res) {
   })
 }
 
+
+// 创建菜单
+async function createMenu(req,res) {
+  try {
+    let {access_token: accessToken} = await get_access_token();
+    const apiUrl = `https://api.weixin.qq.com/cgi-bin/menu/create?access_token=${accessToken}`;
+
+    // 菜单数据结构示例
+    const menuData = {
+      button: [
+        {
+          type: "click",
+          name: "今日歌曲",
+          key: "V1001_TODAY_MUSIC"
+        },
+        {
+          name: "菜单",
+          sub_button: [
+            {
+              type: "view",
+              name: "搜索",
+              url: "http://www.sogou.com/"
+            },
+            {
+              type: "click",
+              name: "赞一下我们",
+              key: "V1001_GOOD"
+            }
+          ]
+        }
+      ]
+    };
+
+    const response = await axios.post(apiUrl, menuData); // 发送POST请求创建菜单
+
+    if (response.errcode === 0) {
+      res.send({ success: true, message: 'Menu created successfully.' });
+    } else {
+      res.status(500).send({ success: false, message: 'Failed to create menu.', error: response.data });
+    }
+  } catch (error) {
+    console.error('Error creating menu:', error);
+    res.status(500).send({ success: false, message: 'Failed to create menu.' });
+  }
+}
+
+// 发送模版消息
+async function sendTmpMsg(req,res) {
+  try {
+    let {access_token: accessToken} = await get_access_token();
+    const apiUrl = `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${accessToken}`;
+
+    const response = await axios.post(apiUrl, {
+      "touser": "",//接收者openid
+      "template_id": "tNLTj8eG7j8n_aYztolxz_CWPmn2kAUnsBBcSFfLBHI",
+      "url": "https://www.baidu.com/",
+      "data": {
+        "thing01": {
+          "value": "某某"
+        },
+        "amount01": {
+          "value": "￥100"
+        },
+        "thing02": {
+          "value": "广州至北京"
+        },
+        "time01": {
+          "value": "2019年10月1日 15:00"
+        }
+      }
+    }); // 发送POST请求创建菜单
+
+    if (response.errcode === 0) {
+      res.send({ success: true, message: '发送成功' });
+    } else {
+      res.status(500).send({ success: false, message: '发送失败', error: response.data });
+    }
+  } catch (error) {
+    console.error('Error creating menu:', error);
+    res.status(500).send({ success: false, message: '发送失败' });
+  }
+}
+
 module.exports = {
   wexinLogin,
   getWeixinAccessToken,
   getWeixinUserinfo,
   checkSignature,
   getJsApiData,
-  replyMsg
+  replyMsg,
+  createMenu,
+  sendTmpMsg
 }

@@ -106,4 +106,7 @@ module.exports = app => {
   /**生成订单**/
   app.post("/createOrder", wechatPay.createOrder)
   app.post("/addProduct", product.addProduct)
+  // 菜单
+  app.post("/createMenu", wechat.createMenu)
+  app.post("/sendTmpMsg", wechat.sendTmpMsg)
 }
