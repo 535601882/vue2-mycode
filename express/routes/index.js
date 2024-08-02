@@ -34,6 +34,7 @@ const upload = multer({
 })
 
 module.exports = app => {
+  app.post("/login", database.login)
   app.get("/getUsers", database.getUsers)
   app.get("/getUserId", database.getUserId)
   /** POST Methods */

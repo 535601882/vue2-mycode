@@ -17,6 +17,11 @@ userSchema.pre('save', async function(next) {
   }
   next();
 });
+// Method to compare the provided password with the stored hashed password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  console.log(`Comparing ${candidatePassword} with ${this.password}`);
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 //3.将文档结构发布为模型
 /**
  * User :第一个参数是跟 model 对应的集合（ collection ）名字的 单数 形式

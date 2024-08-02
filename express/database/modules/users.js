@@ -6,6 +6,8 @@ const path = require("path")
 const multer = require('multer')
 const Qs = require("qs")
 const axios = require("../axios")
+// 导入用于生成 JWT 字符串的包
+const jwt = require('jsonwebtoken')
 
 class API {
   getUsers(req, res) {
@@ -94,9 +96,6 @@ class API {
       if (existingUser) {
         return res.status(409).json({ message: 'Email is already registered.' });
       }
-
-      // Hash the password
-      req.body.password = bcrypt.hashSync(req.body.password, 10);
 
       // Create and save the new user
       const newUser = new User(req.body);
@@ -233,6 +232,38 @@ class API {
     axios.get(url,{responseType: 'arraybuffer'}).then(data => {
       res.setHeader('Content-Type', 'image/jpeg');
       res.send(data)
+    })
+  }
+  async login(req, res) {
+    // 将 req.body 请求体中的数据，转存为 userinfo 常量
+    const { email, password } = req.body
+    // Find the user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({ message: '账户不存在' });
+    }
+
+    // Compare the provided password with the stored hashed password
+    const passwordMatch = await user.comparePassword(password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ message: '帐号或密码错误' });
+    }
+
+    // 登录成功
+    // 在登录成功之后，调用 jwt.sign() 方法生成 JWT 字符串。并通过 token 属性发送给客户端
+    const tokenStr = jwt.sign(
+      { username: user.username,email: user.email,birthday: user.birthday,address: user.address },
+      process.env.SECRETKEY,// 定义 secret 密钥
+      { expiresIn: '30s' }
+    )
+
+    // 向客户端响应成功的消息
+    res.send({
+      status: 200,
+      message: '登录成功！',
+      token: tokenStr // 要发送给客户端的 token 字符串
     })
   }
 }
