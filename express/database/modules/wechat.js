@@ -7,6 +7,10 @@ const crypto = require("crypto");
 const axios = require("../axios")
 const log = require("../../utils/log4j")
 const client = require('../../utils/redis');
+// 将xml处理成json
+const xml2js = require('xml2js');
+//FormData是Web API的一部分，而不是Node.js的标准库
+const FormData = require('form-data');
 
 // 用于存储 access_token 和 openid 的键名前缀
 const ACCESS_TOKEN_KEY_PREFIX = 'wechat_access_token:';
@@ -58,6 +62,81 @@ function raw(args) {
   string = string.substr(1)
   return string
 }
+
+// 回复文本消息
+const textMsg = (result, content) => {
+  console.log('reply type text !')
+  var xmlContent = '<xml><ToUserName><![CDATA[' + result.FromUserName + ']]></ToUserName>'
+  xmlContent += '<FromUserName><![CDATA[' + result.ToUserName + ']]></FromUserName>'
+  xmlContent += '<CreateTime>' + new Date().getTime() + '</CreateTime>'
+  xmlContent += '<MsgType><![CDATA[text]]></MsgType>'
+  xmlContent += '<Content><![CDATA[' + content + ']]></Content></xml>'
+  return xmlContent
+}
+
+// 回复图片
+const imgMsg = function (result, media_id) {
+  console.log('reply type image !', media_id)
+  var xmlContent = '<xml><ToUserName><![CDATA[' + result.FromUserName + ']]></ToUserName>'
+  xmlContent += '<FromUserName><![CDATA[' + result.ToUserName + ']]></FromUserName>'
+  xmlContent += '<CreateTime>' + new Date().getTime() + '</CreateTime>'
+  xmlContent += '<MsgType><![CDATA[image]]></MsgType>'
+  xmlContent += '<Image><MediaId><![CDATA[' + media_id + ']]></MediaId></Image></xml>'
+  return xmlContent
+}
+
+// 回复图文消息
+const graphicMsg = (result, contentArr) => {
+  console.log('reply type image and text !')
+  var xmlContent = '<xml><ToUserName><![CDATA[' + result.FromUserName + ']]></ToUserName>'
+  xmlContent += '<FromUserName><![CDATA[' + result.ToUserName + ']]></FromUserName>'
+  xmlContent += '<CreateTime>' + new Date().getTime() + '</CreateTime>'
+  xmlContent += '<MsgType><![CDATA[news]]></MsgType>'
+  xmlContent += '<ArticleCount>' + contentArr.length + '</ArticleCount>'
+  xmlContent += '<Articles>'
+  contentArr.map((item, index) => {
+    xmlContent += '<item>'
+    xmlContent += '<Title><![CDATA[' + item.Title + ']]></Title>'
+    xmlContent += '<Description><![CDATA[' + item.Description + ']]></Description>'
+    xmlContent += '<PicUrl><![CDATA[' + item.PicUrl + ']]></PicUrl>'
+    xmlContent += '<Url><![CDATA[' + item.Url + ']]></Url>'
+    xmlContent += '</item>'
+  })
+  xmlContent += '</Articles></xml>'
+  return xmlContent
+}
+
+// 根据media_id 获取临时素材
+async function downloadMedia(mediaId) {
+  let {access_token: accessToken} = await get_access_token();
+  const url = `https://api.weixin.qq.com/cgi-bin/media/get?access_token=${accessToken}&media_id=${mediaId}`;
+  return axios({
+    url,
+    method: 'GET',
+    responseType: 'arraybuffer'
+  })
+}
+
+// 素材上传获取 media_id 新增临时素材
+function uploadFile (buffer, type) {
+  return new Promise(async (resolve, reject) => {
+    let {access_token: accessToken} = await get_access_token();
+    const form = new FormData();
+    form.append('media', buffer, { filename: 'image.jpg' });
+    var url = 'https://api.weixin.qq.com/cgi-bin/media/upload?access_token=' + accessToken + '&type=' + type
+    log.info({url,form,headers: form.getHeaders()})
+    axios.post(url, form, {headers: form.getHeaders()}).then((result) => {
+      console.log(result)
+      log.info("上传附件")
+      log.info(result)
+      resolve(result.media_id)
+    }).catch(e => {
+      console.log("上传失败",e,form)
+      reject(e)
+    })
+  })
+}
+
 
 
 
@@ -198,6 +277,7 @@ async function get_access_token() {
 
     log.info('accessToken = ' + accessToken)
     if (accessToken) {
+      log.info("从缓存中获取")
       return { access_token: accessToken };
     } else {
       log.info("重新获取")
@@ -321,10 +401,108 @@ async function getJsApiData(req,res){
   res.send(ret)
 }
 
+
+// 消息通知
+/****
+ * 两种方式处理xml
+ * 一种使用express-xml-bodyparser 中间件来解析 POST 请求体中的 XML 数据
+ * app.use(xmlBodyParser());
+ * 一种手动处理
+ * app.post('/', (req, res) => {
+    let xmlData = '';
+
+    req.on('data', chunk => {
+        xmlData += chunk;
+    });
+
+    req.on('end', () => {
+        parser.parseString(xmlData, (err, result) => {
+            if (err) {
+                res.send('Error parsing XML');
+                return;
+            }
+            console.log(result);
+            res.send('success');
+        });
+    });
+});
+ * @param req
+ * @param res
+ */
+function replyMsg(req,res) {
+  // 获取到微信返回的二进制数据
+  var buffer = []
+  req.on('data', (data) => {
+    buffer.push(data)
+  })
+  req.on('end', () => {
+    // 将数据转化成 utf-8 格式
+    var msgXml = Buffer.concat(buffer).toString('utf-8')
+
+    // 调用 xml2js 模块的 parseString 方法
+    xml2js.parseString(msgXml, { explicitArray: false }, async (error, result) => {
+      // 如果有错误直接抛出
+      if (error) {
+        console.error("报错了",error);
+        res.status(500).send('Error parsing XML');
+        return
+      }
+      const msg = result.xml // result.xml 是获取到的真实数据
+      log.info("接收到消息")
+      log.info(msg)
+      const fromUser = msg.FromUserName;
+      const toUser = msg.ToUserName;
+      const msgType = msg.MsgType;
+      const content = msg.Content;
+
+      let reply = '';
+
+      if (msgType === 'text') {
+        reply = textMsg(msg,content)
+        // res.set('Content-Type', 'application/xml');
+        res.send(reply);
+        return
+      } if (msgType === 'image') {
+        const mediaId = msg.MediaId;
+        // 下载图片
+        downloadMedia(mediaId)
+          .then(buffer => {
+            log.info("下载成功")
+            log.info(buffer)
+            // 上传图片到微信服务器
+            return uploadFile(buffer,"image");
+          })
+          .then(newMediaId => {
+            log.info("开始回复："+newMediaId)
+            // 回复图片消息
+            reply = imgMsg(msg,newMediaId)
+            res.send(reply);
+          })
+          .catch(err => {
+            console.error('Error handling image message:', err);
+            res.status(500).send('');
+          });
+      } else {
+        reply = `<xml>
+                <ToUserName><![CDATA[${fromUser}]]></ToUserName>
+                <FromUserName><![CDATA[${toUser}]]></FromUserName>
+                <CreateTime>${Math.floor(Date.now() / 1000)}</CreateTime>
+                <MsgType><![CDATA[text]]></MsgType>
+                <Content><![CDATA[Unsupported message type]]></Content>
+            </xml>`;
+        // res.set('Content-Type', 'application/xml');
+        res.send(reply);
+        return
+      }
+    })
+  })
+}
+
 module.exports = {
   wexinLogin,
   getWeixinAccessToken,
   getWeixinUserinfo,
   checkSignature,
-  getJsApiData
+  getJsApiData,
+  replyMsg
 }

@@ -97,7 +97,10 @@ module.exports = app => {
    * **/
   app.get("/wexinLogin", wechat.wexinLogin)
   app.get("/getWeixinAccessToken", wechat.getWeixinAccessToken)
+  // 鉴权
   app.get("/checkSignature", wechat.checkSignature)
+  // 消息通知
+  app.post("/checkSignature", wechat.replyMsg)
   app.get("/getWeixinUserinfo", wechat.getWeixinUserinfo)
   app.get("/getJsApiData", wechat.getJsApiData)
   /**生成订单**/
