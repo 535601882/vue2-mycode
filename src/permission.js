@@ -10,6 +10,7 @@ import utils from "@/libs/utils.js";
 const whiteList = ["/login", "/register", "/404"];
 
 router.beforeEach((to, from, next) => {
+  console.log("beforeEach", to);
   // 进度条
   NProgress.start();
   const token = store.getters["auth/accessToken"];
@@ -52,6 +53,13 @@ router.beforeEach((to, from, next) => {
 });
 
 router.afterEach((to) => {
+  console.log("afterEach", to);
+
+  // 单独设置layout
+  console.log("to.meta.layout", to.meta.layout);
+  if (to.meta.layout) {
+    store.dispatch("setLayout", to.meta.layout);
+  }
   // 进度条
   NProgress.done();
   // 需要的信息

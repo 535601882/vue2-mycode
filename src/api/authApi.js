@@ -1,15 +1,16 @@
 import axios from "@/plugins/axios";
+let baseUrl = process.env.VUE_APP_API;
 
-export function login() {
-  return axios.get("/api/login");
+export function login(params) {
+  return axios.post(`${baseUrl}/login`, params);
 }
 
-export function register() {
-  return axios.get("/api/register");
+export function register(params) {
+  return axios.post(`${baseUrl}/register`, params);
 }
-export function logout() {
-  return axios.get("/api/logout");
+export function logout(params) {
+  return axios.post(`${baseUrl}/logout`, params);
 }
-export function refreshToken() {
-  return axios.get("/api/refreshToken");
+export function refreshToken(params) {
+  return axios.post(`${baseUrl}/refreshToken`, params);
 }

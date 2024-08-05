@@ -101,7 +101,7 @@ class API {
       const newUser = new User(req.body);
       const savedUser = await newUser.save();
 
-      res.status(201).json(savedUser);
+      res.status(200).json(savedUser);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -253,18 +253,35 @@ class API {
 
     // 登录成功
     // 在登录成功之后，调用 jwt.sign() 方法生成 JWT 字符串。并通过 token 属性发送给客户端
+    let payload = { username: user.username,email: user.email,birthday: user.birthday,address: user.address }
     const tokenStr = jwt.sign(
-      { username: user.username,email: user.email,birthday: user.birthday,address: user.address },
+      payload,
       process.env.SECRETKEY,// 定义 secret 密钥
-      { expiresIn: '30s' }
+      { expiresIn: '30s' }//例如： 60 ， "2 days" ， "10h" ， "7d" 。数值被解释为秒数。如果使用字符串，请确保提供时间单位（天、小时等），否则默认使用毫秒单位（ "120" 等于 "120ms" ）。
     )
+    // 生成刷新token
+    const refreshToken = jwt.sign(payload, process.env.SECRETKEY, { expiresIn: '1h' });
 
     // 向客户端响应成功的消息
     res.send({
       status: 200,
       message: '登录成功！',
-      token: tokenStr // 要发送给客户端的 token 字符串
+      token: tokenStr, // 要发送给客户端的 token 字符串
+      refreshToken,
+      expiresAt: Date.now() + (30 * 1000) // 过期时间
     })
+  }
+  // 刷新token
+  refresh_token(req, res) {
+    const refreshToken = req.body.refreshToken;
+    jwt.verify(refreshToken, process.env.SECRETKEY, (err, decoded) => {
+      if (err) {
+        return res.status(401).send('Invalid refresh token');
+      }
+
+      const token = jwt.sign({ username: decoded.username,email: decoded.email,birthday: decoded.birthday,address: decoded.address }, process.env.SECRETKEY, { expiresIn: '30s' });
+      res.json({ token });
+    });
   }
 }
 const api = new API()

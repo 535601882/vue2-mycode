@@ -10,6 +10,15 @@ const routes = [
   //   },
   //   children: [
   {
+    path: "/login",
+    name: "Login",
+    meta: { title: "Login", keepalive: false, layout: "div" },
+    components: {
+      default: () => import(/* webpackChunkName: "Login" */ "@/views/Login/index.vue"),
+      // RightSidebar: () => import("@/views/About.vue"),
+    },
+  },
+  {
     path: "/home",
     name: "Home",
     meta: { title: "Home", keepalive: true },

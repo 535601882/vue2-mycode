@@ -13,7 +13,7 @@
     "lint": "vue-cli-service lint",
     "prepare": "husky install",
     "plop": "plop",
-    "express": "node express/app.js"
+    "express": "node express/server.js"
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
@@ -32,6 +32,7 @@
     "element-ui": "^2.15.13",
     "express": "^4.17.1",
     "express-jwt": "^8.4.1",
+    "express-validator": "^7.1.0",
     "form-data": "^4.0.0",
     "gltf-webpack-loader": "^1.0.6",
     "gsap": "^3.12.2",
