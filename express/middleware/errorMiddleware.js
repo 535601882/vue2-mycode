@@ -58,7 +58,10 @@ const developmentError = (err, res) => {
 module.exports = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
-
+  if (!process.env.NODE_ENV) {
+    console.warn("请配置NODE_ENV")
+    developmentError(err, res);
+  }
   if (process.env.NODE_ENV === "development") {
     developmentError(err, res);
   }

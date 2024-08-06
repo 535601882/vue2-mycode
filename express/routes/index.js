@@ -36,6 +36,7 @@ const upload = multer({
 module.exports = app => {
   app.post("/login", database.login)
   app.post("/register", database.addUser)
+  app.post("/logout", database.logout)
   app.post("/refresh_token", database.refresh_token)
   app.get("/getUsers", database.getUsers)
   app.get("/getUserId", database.getUserId)

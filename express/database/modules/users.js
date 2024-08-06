@@ -8,6 +8,8 @@ const Qs = require("qs")
 const axios = require("../axios")
 // 导入用于生成 JWT 字符串的包
 const jwt = require('jsonwebtoken')
+const client = require('../../utils/redis');
+const { v4: uuidv4 } = require('uuid');
 
 class API {
   getUsers(req, res) {
@@ -250,25 +252,25 @@ class API {
     if (!passwordMatch) {
       return res.status(401).json({ message: '帐号或密码错误' });
     }
-
+    const token_expires_in = 120//120s
+    const refreshToken_expires_in = 3600//1 hour
     // 登录成功
     // 在登录成功之后，调用 jwt.sign() 方法生成 JWT 字符串。并通过 token 属性发送给客户端
     let payload = { username: user.username,email: user.email,birthday: user.birthday,address: user.address }
     const tokenStr = jwt.sign(
-      payload,
+      {...payload,jti: uuidv4()},
       process.env.SECRETKEY,// 定义 secret 密钥
-      { expiresIn: '30s' }//例如： 60 ， "2 days" ， "10h" ， "7d" 。数值被解释为秒数。如果使用字符串，请确保提供时间单位（天、小时等），否则默认使用毫秒单位（ "120" 等于 "120ms" ）。
+      { expiresIn: token_expires_in }//例如： 60 ， "2 days" ， "10h" ， "7d" 。数值被解释为秒数。如果使用字符串，请确保提供时间单位（天、小时等），否则默认使用毫秒单位（ "120" 等于 "120ms" ）。
     )
     // 生成刷新token
-    const refreshToken = jwt.sign(payload, process.env.SECRETKEY, { expiresIn: '1h' });
-
+    const refreshToken = jwt.sign({...payload,jti: uuidv4()}, process.env.SECRETKEY, { expiresIn: refreshToken_expires_in });
     // 向客户端响应成功的消息
     res.send({
       status: 200,
       message: '登录成功！',
       token: tokenStr, // 要发送给客户端的 token 字符串
       refreshToken,
-      expiresAt: Date.now() + (30 * 1000) // 过期时间
+      expiresAt: Date.now() + (token_expires_in * 1000) // 过期时间 当前时间 + 30s
     })
   }
   // 刷新token
@@ -283,6 +285,20 @@ class API {
       res.json({ token });
     });
   }
+  // 退出登录
+  async logout(req, res) {
+    const token = req.headers.authorization
+    if (!token) {
+      return res.sendStatus(401); // Unauthorized
+    }
+    // Blacklist the token by storing it in Redis
+    let jti = req.auth.jti
+    await client.set(jti, "true", {
+      EX: 30,
+      NX: true
+    });
+    res.send({ status: 200, message: 'Logged out successfully.' });
+  };
 }
 const api = new API()
 module.exports = api
