@@ -7,6 +7,7 @@ import ImageUpload from "./ImageUpload";
 import QuillEditor from "./QuillEditor";
 import DemoComp from "./DemoComp";
 import AppTable from "./AppTable";
+import SearchFormItem from "./AppTable/searchFormItem";
 import FormConfigProvider from "./FormConfigProvider/index.js";
 import PageContainer from "./PageContainer";
 import IconSvg from "./IconSvg";
@@ -28,6 +29,7 @@ export default {
   QuillEditor,
   DemoComp,
   AppTable,
+  SearchFormItem,
   FormConfigProvider,
   PageContainer,
   IconSvg,

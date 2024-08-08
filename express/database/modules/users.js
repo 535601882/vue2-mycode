@@ -11,50 +11,50 @@ const jwt = require('jsonwebtoken')
 const client = require('../../utils/redis');
 const { v4: uuidv4 } = require('uuid');
 
+const token_expires_in = 7200//2h
+const refreshToken_expires_in = 14400//4 hour
+
 class API {
-  getUsers(req, res) {
+  async getUsers(req, res) {
     let response = res
     const pageNumber = parseInt(req.query.pageNumber); // 页码
     const pageSize = parseInt(req.query.pageSize); // 页大小
+    const sortBy = req.query.sortBy || '-createdAt'; // 排序字段，默认按创建时间降序
     if (!pageNumber) return res.status(500).send({ error: 'pageNumber不能为空' });
     if (!pageSize) return res.status(500).send({ error: 'pageSize不能为空' });
+    // 构建查询条件
+    let query = {};
+    Object.entries(req.query).forEach(([key, value]) => {
+      // 排除page和limit，因为它们有特定的处理方式
+      if (key === 'pageNumber' || key === 'pageSize') {
+        return;
+      }
+      if (value !== undefined && value !== '') {
+        query[key] = value;
+      }
+    });
     // 计算要跳过的文档数量
     const skip = (pageNumber - 1) * pageSize;
     // 查询文档可以用 model 的 find, findById, findOne, 和 where 这些静态方法
-    User.find({}, null, {
-      sort: '-date',
+    // projection 该参数用于指定要返回的字段。如果省略，则返回所有字段。
+    // options 该参数用于指定查询选项，比如排序、限制、跳过等
+    let result = await User.find(query, null, {
+      sort: sortBy,
       limit: pageSize, // 限制每页的数量
       skip: skip,   // 跳过的文档数量
-    }, (err, result, res) => {
-      console.log("result length",result.length);
-      if (err) {
-        response.send({
-          status: 0,
-          message: '查询失败'
-        })
-        return
-      }
-      // 查询总文档数量，以便用于分页计算
-      User.countDocuments(req.query, (err, totalCount) => {
-        if (err) {
-          response.send({
-            status: 0,
-            message: '查询失败'
-          });
-          return;
-        }
-        response.send({
-          status: 200,
-          message: '',
-          result: result,
-          totalCount: totalCount,
-          currentPage: pageNumber,
-          pageSize: pageSize,
-          totalPage: Math.ceil(totalCount / pageSize)
-        })
-      })
     })
+      // 查询总文档数量，以便用于分页计算
+    let totalCount = await User.countDocuments(query)
 
+    response.send({
+      status: 200,
+      message: '',
+      result: result,
+      totalCount: totalCount,
+      currentPage: pageNumber,
+      pageSize: pageSize,
+      totalPage: Math.ceil(totalCount / pageSize)
+    })
   }
   getUserId(req, res) {
     let response = res
@@ -252,8 +252,6 @@ class API {
     if (!passwordMatch) {
       return res.status(401).json({ message: '帐号或密码错误' });
     }
-    const token_expires_in = 120//120s
-    const refreshToken_expires_in = 3600//1 hour
     // 登录成功
     // 在登录成功之后，调用 jwt.sign() 方法生成 JWT 字符串。并通过 token 属性发送给客户端
     let payload = { username: user.username,email: user.email,birthday: user.birthday,address: user.address }
@@ -281,7 +279,7 @@ class API {
         return res.status(401).send('Invalid refresh token');
       }
 
-      const token = jwt.sign({ username: decoded.username,email: decoded.email,birthday: decoded.birthday,address: decoded.address }, process.env.SECRETKEY, { expiresIn: '30s' });
+      const token = jwt.sign({ username: decoded.username,email: decoded.email,birthday: decoded.birthday,address: decoded.address,jti: uuidv4() }, process.env.SECRETKEY, { expiresIn: '30s' });
       res.json({ token });
     });
   }

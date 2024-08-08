@@ -12,5 +12,5 @@ export function logout(params) {
   return axios.post(`${baseUrl}/logout`, params);
 }
 export function refreshToken(params) {
-  return axios.post(`${baseUrl}/refreshToken`, params);
+  return axios.post(`${baseUrl}/refresh_token`, params);
 }

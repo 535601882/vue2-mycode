@@ -53,10 +53,7 @@ router.beforeEach((to, from, next) => {
 });
 
 router.afterEach((to) => {
-  console.log("afterEach", to);
-
   // 单独设置layout
-  console.log("to.meta.layout", to.meta.layout);
   if (to.meta.layout) {
     store.dispatch("setLayout", to.meta.layout);
   }

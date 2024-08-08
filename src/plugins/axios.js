@@ -1,6 +1,6 @@
 import axios from "axios";
 import store from "@/store";
-import router from "@/router";
+// import router from "@/router";
 import xhr from "axios/lib/adapters/xhr";
 const setting = require("@/config/setting");
 // 标记是否正在刷新 Token
@@ -18,6 +18,7 @@ const generateCacheKey = (config) => {
   return `${encodeURIComponent(url)}_${method.toUpperCase()}_${JSON.stringify(params)}`;
 };
 // 利用adapter实现相同接口的请求缓存
+// eslint-disable-next-line no-unused-vars
 const cacheAdapterEnhancer = async (config) => {
   const key = generateCacheKey(config);
   // 是否需要缓存
@@ -88,7 +89,7 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => {
     // 2xx 范围内的状态码都会触发该函数。
-    // console.log("请求响应成功:",response);
+    console.log("请求响应成功:", response);
     // 对响应数据做点什么
     return response.data;
   },
@@ -103,9 +104,10 @@ instance.interceptors.response.use(
       return Promise.reject(error);
     }
     const originalRequest = config;
-
-    if (status === 401 && originalRequest.url.includes("/api/refreshToken")) {
-      router.push("/login");
+    // refreshToken过期，重新登录
+    if (status === 401 && originalRequest.url.includes("/refresh_token")) {
+      // router.push({path: "/login"});
+      window.location.href = "/login";
       return Promise.reject(error);
     }
 
@@ -117,26 +119,29 @@ instance.interceptors.response.use(
       // Access Token was expired
       // 判断是否已经在刷新 Token
       if (!isRefreshing) {
-        isRefreshing = true;
-        console.log("originalRequest._retry", originalRequest._retry);
-        store
-          .dispatch("auth/refreshToken")
-          .then(({ token }) => {
-            // 更新原始请求的 headers.Authorization
-            originalRequest.headers[setting.AUTHORIZATION] = token || `111111`;
-            // 将所有待重发的请求重新发送
-            retryRequests.forEach((subscriber) => {
-              subscriber(token);
+        return new Promise((resolve, reject) => {
+          isRefreshing = true;
+          store
+            .dispatch("auth/refreshToken", store.getters["auth/refreshToken"])
+            .then(({ token }) => {
+              // 更新原始请求的 headers.Authorization
+              originalRequest.headers[setting.AUTHORIZATION] = token || `111111`;
+              // 将所有待重发的请求重新发送
+              retryRequests.forEach((subscriber) => {
+                subscriber(token);
+              });
+              let res = instance(originalRequest);
+              return resolve(res);
+            })
+            .catch((e) => {
+              retryRequests.forEach((cb) => cb(null));
+              reject(e);
+            })
+            .finally(() => {
+              isRefreshing = false;
+              retryRequests = []; // 重置
             });
-            return instance(originalRequest);
-          })
-          .catch(() => {
-            retryRequests.forEach((cb) => cb(null));
-          })
-          .finally(() => {
-            isRefreshing = false;
-            retryRequests = []; // 重置
-          });
+        });
       } else {
         // 正在刷新 token，将请求添加到待重发的队列中
         return new Promise((resolve, reject) => {
@@ -149,8 +154,9 @@ instance.interceptors.response.use(
           });
         });
       }
+    } else {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
   }
 );
 

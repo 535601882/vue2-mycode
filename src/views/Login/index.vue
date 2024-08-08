@@ -69,9 +69,8 @@ export default {
     login() {
       this.$refs.loginForm.validate((valid) => {
         if (!valid) return this.$message.warning("表单校验不通过");
-
-        this.$api.authApi.login(this.loginForm).then((res) => {
-          console.log("res", res);
+        // eslint-disable-next-line no-unused-vars
+        this.$store.dispatch("auth/login", this.loginForm).then((res) => {
           this.$message.success("登录成功");
           this.$router.push({ path: "/home" });
         });

@@ -46,7 +46,7 @@ const productionError = (err, res) => {
 // Handles development errore
 // sends back the error message, and additional information about the error
 const developmentError = (err, res) => {
-  res.status(err.statusCode).json({
+  res.status(err.status).json({
     status: err.status,
     message: err.message,
     error: err,

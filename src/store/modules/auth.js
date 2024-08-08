@@ -1,16 +1,21 @@
 import api from "@/api";
+import utils from "@/libs/utils";
 
 export default {
   namespaced: true,
   state: {
     status: { loggedIn: false },
-    user: null,
-    token: "111111",
+    user: utils.storage.get("user", null),
+    token: utils.storage.get("token", null),
+    refreshToken: utils.storage.get("refreshToken", null),
     roles: [],
   },
   getters: {
     accessToken(state) {
       return state.token;
+    },
+    refreshToken(state) {
+      return state.refreshToken;
     },
     roles(state) {
       return state.roles;
@@ -21,10 +26,16 @@ export default {
       return api.authApi.login(user).then(
         (user) => {
           commit("loginSuccess", user);
+          commit("setToken", user.token);
+          commit("refreshToken", user.refreshToken);
+          utils.storage.set("user", user);
+          utils.storage.set("token", user.token);
+          utils.storage.set("refreshToken", user.refreshToken);
           return Promise.resolve(user);
         },
         (error) => {
           commit("loginFailure");
+          utils.storage.remove("user");
           return Promise.reject(error);
         }
       );
@@ -47,11 +58,12 @@ export default {
     },
     refreshToken({ commit }, accessToken) {
       return new Promise((resolve, reject) => {
-        api.authApi.refreshToken(accessToken).then(
+        api.authApi.refreshToken({ refreshToken: accessToken }).then(
           (response) => {
-            commit("refreshToken", response.token);
+            commit("setToken", response.token);
+            utils.storage.set("token", response.token);
             resolve({
-              token: "111111",
+              token: response.token,
               ...response.data,
             });
           },
@@ -83,12 +95,11 @@ export default {
     },
     registerSuccess() {},
     registerFailure() {},
-    refreshToken(state, accessToken) {
-      state.user = { ...state.user, accessToken: accessToken };
-      state.token = "111111";
+    refreshToken(state, refreshToken) {
+      state.refreshToken = refreshToken;
     },
-    setToken(state) {
-      state.token = "222";
+    setToken(state, token) {
+      state.token = token;
     },
     clearUserData() {},
     setRoles(state) {

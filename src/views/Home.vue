@@ -6,7 +6,36 @@
     <el-button @click="handleMargeLang">合并语言</el-button>
     <el-button @click="handleToggleLayout">切换layout</el-button>
     <hr />
-    <app-table :table="table" :paging="paging"></app-table>
+    <app-table
+      ref="appTable"
+      :columns="table.columns"
+      :query="table.query"
+      :tableData="table.data"
+      :paging="paging"
+      row-key="_id"
+      :tableAttrs="{ border: true }"
+      type="checkbox"
+      @pageChange="handleSearchClick"
+    >
+      <template v-slot:search="{ queryForm }">
+        <search-form-item prop="_id">
+          <el-input v-model="queryForm._id" placeholder="placeholder"></el-input>
+        </search-form-item>
+        <search-form-item prop="username">
+          <el-input v-model="queryForm.username" placeholder="placeholder"></el-input>
+        </search-form-item>
+        <search-form-item prop="birthday">
+          <el-input v-model="queryForm.birthday" placeholder="placeholder"></el-input>
+        </search-form-item>
+      </template>
+      <template v-slot:column_wrap_username>
+        <el-table-column prop="username" label="用户名"> </el-table-column>
+      </template>
+      <template v-slot:column_inner_birthday="{ row }">
+        {{ row.birthday }}
+      </template>
+      <template v-slot:column_inner__control> 左侧操作 </template>
+    </app-table>
     <hr />
     <p>高阶组件</p>
     <CustomInput v-model="model" placeholder="测试" ref="CustomInput">
@@ -34,11 +63,18 @@ export default {
   data() {
     return {
       table: {
+        query: [
+          { prop: "_id", label: "id", isShow: true },
+          { prop: "username", label: "姓名", isShow: false, value: "111" },
+          { prop: "birthday", label: "生日" },
+        ],
         columns: [
-          { prop: "name", label: "姓名" },
+          { prop: "_id", label: "id", isShow: true },
+          { prop: "username", label: "姓名", isShow: false },
           { prop: "birthday", label: "生日" },
           { prop: "address", label: "地址" },
-          { prop: "date", label: "修改日期" },
+          { prop: "createdAt", label: "创建日期" },
+          { prop: "updatedAt", label: "修改日期" },
         ],
         data: [],
       },
@@ -47,14 +83,15 @@ export default {
         total: null,
         currentPage: 1,
       },
+      selectionData: null,
       model: null,
     };
   },
   mounted() {
-    console.log(this.$refs.CustomInput.componentInstance);
-    console.log("created", this.$i18n, this.$i18n.messages);
+    // console.log(this.$refs.CustomInput.componentInstance);
+    // console.log("created", this.$i18n, this.$i18n.messages);
     this.handleSearchClick();
-    this.getComponentInsertDom();
+    // this.getComponentInsertDom();
   },
   methods: {
     handleClick() {
@@ -83,15 +120,22 @@ export default {
       }
     },
     // 查询
-    handleSearchClick() {
+    async handleSearchClick() {
+      let params = this.$refs.appTable.getQueryParames();
+      console.log(params);
       let obj = {
         pageNumber: this.paging.currentPage,
         pageSize: this.paging.pageSize,
       };
-      api.clientApi.getUsers(obj).then((res) => {
+      obj = { ...obj, ...params };
+      try {
+        let res = await api.clientApi.getUsers(obj);
+        console.log("查询成功=============", res);
         this.table.data = res.result;
         this.paging.total = res.totalCount;
-      });
+      } catch (e) {
+        console.log("查询失败=============", e);
+      }
     },
     getComponentInsertDom() {
       let Hello = Vue.extend(HelloWorld);

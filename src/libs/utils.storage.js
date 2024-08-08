@@ -59,5 +59,5 @@ class Storage {
     return `${this.namespace + "_" + key}`;
   }
 }
-let storage = new Storage();
+let storage = new Storage(process.env.NODE_ENV + "_storage");
 export default storage;

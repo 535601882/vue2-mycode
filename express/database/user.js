@@ -21,8 +21,20 @@ const userSchema = new Schema({
   password: { type: String, required: true, match: /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,15}$/,message: "25225"},//密码必须由数字、‌字母两种字符组成，‌长度在8-15位之间：‌
   email: { type: String, required: true, unique: true ,match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/},
   birthday:{type:Date},
-  address:{type:String}
+  address:{type:String},
+  // 添加 createdAt 和 updatedAt 字段
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true })
+// 设置 timestamps 选项为 true，以便自动更新 createdAt 和 updatedAt
+/*timestamps: {
+  createdAt: 'createdTime', // 将 createdAt 改名为 createdTime
+    updatedAt: 'updatedTime'  // 将 updatedAt 改名为 updatedTime
+}*/
+
+userSchema.virtual('id').get(function () {
+  return this._id.toString();
+});
 
 // virtuals 定义虚拟属性，即在数据库中不存在但可以通过其他字段计算得出的属性。
 /*userSchema.virtual('fullName').get(function() {
